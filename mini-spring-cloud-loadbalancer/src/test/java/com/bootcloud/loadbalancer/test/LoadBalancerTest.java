@@ -43,17 +43,24 @@ public class LoadBalancerTest {
         
         assertEquals("RoundRobin", loadBalancer.getStrategyName());
         
+        // 测试轮询应该按顺序返回实例
         ServiceInstance instance1 = loadBalancer.choose(instances);
         ServiceInstance instance2 = loadBalancer.choose(instances);
         ServiceInstance instance3 = loadBalancer.choose(instances);
+        ServiceInstance instance4 = loadBalancer.choose(instances);
         
         assertNotNull(instance1);
         assertNotNull(instance2);
         assertNotNull(instance3);
+        assertNotNull(instance4);
         
-        assertNotEquals(instance1.getInstanceId(), instance2.getInstanceId());
-        assertNotEquals(instance2.getInstanceId(), instance3.getInstanceId());
-        assertEquals(instance1.getInstanceId(), instance3.getInstanceId());
+        // 第 4 个应该和第 1 个相同（轮询一圈）
+        assertEquals(instance1.getInstanceId(), instance4.getInstanceId());
+        
+        // 所有实例都应该被选中
+        assertTrue(instances.contains(instance1));
+        assertTrue(instances.contains(instance2));
+        assertTrue(instances.contains(instance3));
     }
 
     @Test

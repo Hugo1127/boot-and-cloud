@@ -43,8 +43,21 @@ public class JVMInfoTest {
         assertTrue(classInfo.containsKey("loadedClassCount"));
         assertTrue(classInfo.containsKey("totalLoadedClassCount"));
         
-        assertTrue((Integer) classInfo.get("loadedClassCount") > 0);
-        assertTrue((Integer) classInfo.get("totalLoadedClassCount") > 0);
+        // 兼容 Integer 和 Long 类型
+        Object loadedCount = classInfo.get("loadedClassCount");
+        Object totalLoadedCount = classInfo.get("totalLoadedClassCount");
+        
+        if (loadedCount instanceof Integer) {
+            assertTrue((Integer) loadedCount > 0);
+        } else {
+            assertTrue((Long) loadedCount > 0);
+        }
+        
+        if (totalLoadedCount instanceof Integer) {
+            assertTrue((Integer) totalLoadedCount > 0);
+        } else {
+            assertTrue((Long) totalLoadedCount > 0);
+        }
         
         System.out.println("Class Info: " + classInfo);
     }

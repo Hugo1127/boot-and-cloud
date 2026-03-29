@@ -10,4 +10,6 @@ public interface ServiceDiscovery {
     ServiceInstance chooseInstance(String serviceId);
 
     void refreshCache();
+    
+    void shutdown();
 }

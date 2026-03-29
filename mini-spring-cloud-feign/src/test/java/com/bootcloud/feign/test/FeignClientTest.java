@@ -27,13 +27,13 @@ public class FeignClientTest {
      */
     @FeignClient(name = "test-service", url = "https://jsonplaceholder.typicode.com")
     public interface TestClient {
-        @GetMapping("/posts/1")
+        @GetMapping(path = "/posts/1")
         Post getPost();
         
-        @GetMapping("/users/{id}")
+        @GetMapping(path = "/users/{id}")
         User getUser(@PathVariable("id") Long id);
         
-        @PostMapping("/posts")
+        @PostMapping(path = "/posts")
         Post createPost(@RequestBody Post post);
     }
     
