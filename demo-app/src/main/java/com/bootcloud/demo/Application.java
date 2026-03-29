@@ -7,6 +7,8 @@ import com.bootcloud.demo.order.service.OrderService;
 import com.bootcloud.demo.user.service.UserService;
 import com.bootcloud.demo.user.model.User;
 
+import java.math.BigDecimal;
+
 @SpringBootApplication
 public class Application {
     public static void main(String[] args) {

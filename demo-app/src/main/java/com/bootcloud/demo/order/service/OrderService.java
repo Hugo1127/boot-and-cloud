@@ -2,7 +2,6 @@ package com.bootcloud.demo.order.service;
 
 import com.bootcloud.core.annotation.Service;
 import com.bootcloud.circuitbreaker.annotation.CircuitBreaker;
-import com.bootcloud.circuitbreaker.core.CircuitBreaker;
 import com.bootcloud.circuitbreaker.core.CircuitBreakerConfig;
 import com.bootcloud.circuitbreaker.factory.CircuitBreakerFactory;
 import com.bootcloud.demo.order.model.Order;
@@ -16,16 +15,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class OrderService {
     private final Map<Long, Order> orderMap = new HashMap<>();
     private final AtomicLong idGenerator = new AtomicLong(1);
-    private final CircuitBreaker userCircuitBreaker;
 
     public OrderService() {
-        this.userCircuitBreaker = CircuitBreakerFactory.create(
-                CircuitBreakerConfig.builder()
-                        .name("user-service-cb")
-                        .failureThreshold(3)
-                        .resetTimeout(5000)
-                        .build()
-        );
     }
 
     @CircuitBreaker(name = "order-cb", failureThreshold = 5, resetTimeout = 10000)
@@ -51,20 +42,5 @@ public class OrderService {
 
     public boolean deleteOrder(Long id) {
         return orderMap.remove(id) != null;
-    }
-
-    public Order createOrderWithFallback(Long userId, Long productId, Integer quantity) {
-        try {
-            return userCircuitBreaker.execute(
-                    () -> createOrder(userId, productId, quantity),
-                    () -> createFallbackOrder(userId, productId, quantity)
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create order", e);
-        }
-    }
-
-    private Order createFallbackOrder(Long userId, Long productId, Integer quantity) {
-        return new Order(-1L, userId, productId, quantity, BigDecimal.ZERO);
     }
 }

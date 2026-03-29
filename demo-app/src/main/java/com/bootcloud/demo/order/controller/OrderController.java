@@ -28,6 +28,6 @@ public class OrderController {
         Long userId = Long.parseLong(body.get("userId").toString());
         Long productId = Long.parseLong(body.get("productId").toString());
         Integer quantity = Integer.parseInt(body.get("quantity").toString());
-        return orderService.createOrderWithFallback(userId, productId, quantity);
+        return orderService.createOrder(userId, productId, quantity);
     }
 }

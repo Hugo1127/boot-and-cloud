@@ -1,511 +1,537 @@
 # Boot&Cloud 架构设计文档
 
-## 一、项目概述
-
-### 1.1 项目定位
-Boot&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring Boot + Spring Cloud核心能力，集成JVM调优、多线程与锁优化模块，聚焦Java后端面试高频考点。
-
-### 1.2 技术栈
-- **JDK版本**: JDK 17+
-- **网络通信**: Netty
-- **序列化**: Jackson, Protobuf
-- **测试框架**: JUnit 5
-- **日志框架**: SLF4J + Logback
-- **构建工具**: Maven
-
-### 1.3 核心目标
-- 代码落地：从零实现核心功能，手写所有关键逻辑
-- 原理吃透：深度理解底层实现机制（反射、动态代理、类加载等）
-- 面试应答：每个模块绑定面试考点，提供标准问答
+> 本文档详细描述 Boot&Cloud 手写极简 Java 微服务框架的整体架构设计、模块依赖关系、核心流程，以及面试考点映射。
 
 ---
 
-## 二、架构分层设计
+## 一、架构总览
 
-### 2.1 整体架构图
+### 1.1 架构分层
+
+Boot&Cloud 采用四层架构设计，自底向上分别为：
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        示例应用层                               │
-│   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐            │
-│   │user-service │  │order-service│  │goods-service│            │
-│   └─────────────┘  └─────────────┘  └─────────────┘            │
-└─────────────────────────────────────────────────────────────────┘
-                              ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                      API网关层                                   │
-│                    mini-spring-gateway                          │
-│            路由转发 | 请求过滤 | 跨域处理 | 限流                  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                     微服务组件层                                 │
-│  ┌──────────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐   │
-│  │   Registry   │ │  Feign   │ │LoadBalancer││CircuitBreaker│   │
-│  │   注册中心   │ │ 远程调用 │ │ 负载均衡  │ │  熔断降级   │   │
-│  └──────────────┘ └──────────┘ └──────────┘ └──────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-                              ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                    核心容器层                                    │
-│  ┌──────────────────────┐  ┌──────────────────────┐          │
-│  │   mini-spring-core   │  │  mini-spring-boot    │          │
-│  │   IOC | AOP容器      │  │  自动配置|嵌入式容器  │          │
-│  └──────────────────────┘  └──────────────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
-                              ↑
-┌─────────────────────────────────────────────────────────────────┐
-│                    性能优化层                                    │
-│  ┌──────────────────────┐  ┌──────────────────────┐          │
-│  │    jvm-optimizer     │  │ concurrent-optimizer │          │
-│  │   JVM调优|GC监控     │  │  多线程|锁优化       │          │
-│  └──────────────────────┘  └──────────────────────┘          │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│              示例应用层（Demo Application Layer）          │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐           │
+│  │  user-    │  │  order-   │  │  goods-   │           │
+│  │  service  │  │  service  │  │  service  │           │
+│  └───────────┘  └───────────┘  └───────────┘           │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│            微服务组件层（Microservice Layer）             │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐  │
+│  │ Registry │ │  Feign   │ │   Load   │ │ Circuit  │  │
+│  │  Server  │ │  Client  │ │ Balancer │ │ Breaker  │  │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │              API Gateway                          │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│            核心容器层（Core Container Layer）             │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │  IOC Container  │  AOP Framework │ Web Server   │  │
+│  │  BeanFactory    │  ProxyFactory │  Netty       │  │
+│  │  ApplicationContext│  Advice     │  Handler     │  │
+│  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │         Auto Configuration (spring.factories)    │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+                          ↓
+┌─────────────────────────────────────────────────────────┐
+│            性能优化层（Performance Layer）                │
+│  ┌─────────────────────┐  ┌────────────────────────┐   │
+│  │   JVM Optimizer     │  │  Concurrent Optimizer  │   │
+│  │   - GCTuner         │  │  - SmartThreadPool     │   │
+│  │   - JVMProfiler     │  │  - LockComparator      │   │
+│  │   - MemoryLeakSim   │  │  - DeadlockDetector    │   │
+│  └─────────────────────┘  └────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 模块职责划分
+### 1.2 模块依赖关系图
 
-| 模块名称 | 职责描述 | 面试考点 |
-|---------|---------|---------|
-| mini-spring-core | IOC容器、AOP实现 | 控制反转、依赖注入、Bean生命周期、循环依赖、动态代理、AOP原理 |
-| mini-spring-boot | 自动配置、嵌入式容器 | 自动配置原理、Starter机制、嵌入式服务器、请求处理流程 |
-| mini-spring-cloud-registry | 服务注册与发现 | 服务注册发现原理、心跳机制、健康检查、CAP理论 |
-| mini-spring-cloud-feign | 远程服务调用 | 声明式RPC、序列化协议、HTTP vs RPC、负载均衡 |
-| mini-spring-cloud-loadbalancer | 客户端负载均衡 | 负载均衡算法、加权策略、最少活跃数 |
-| mini-spring-cloud-circuitbreaker | 服务熔断与降级 | 熔断器状态机、降级策略、服务雪崩防护 |
-| mini-spring-gateway | API网关 | 网关设计模式、路由转发、请求过滤、限流 |
-| jvm-optimizer | JVM调优与监控 | JVM内存模型、GC算法、G1/ZGC调优、OOM排查 |
-| concurrent-optimizer | 多线程与锁优化 | 线程池原理、锁优化、CAS、并发工具、死锁排查 |
-| demo-app | 示例微服务应用 | 整体架构理解、端到端流程演示 |
+```mermaid
+graph TD
+    subgraph 示例应用层
+        demo[demo-app]
+    end
+    
+    subgraph 微服务组件层
+        registry[mini-spring-cloud-registry]
+        feign[mini-spring-cloud-feign]
+        lb[mini-spring-cloud-loadbalancer]
+        cb[mini-spring-cloud-circuitbreaker]
+        gw[mini-spring-gateway]
+    end
+    
+    subgraph 核心容器层
+        boot[mini-spring-boot]
+        core[mini-spring-core]
+    end
+    
+    subgraph 性能优化层
+        jvm[jvm-optimizer]
+        concurrent[concurrent-optimizer]
+    end
+    
+    demo --> boot
+    demo --> registry
+    demo --> feign
+    demo --> lb
+    demo --> cb
+    demo --> jvm
+    demo --> concurrent
+    
+    registry --> boot
+    feign --> boot
+    feign --> lb
+    feign --> cb
+    lb --> registry
+    cb --> feign
+    gw --> boot
+    gw --> registry
+    
+    boot --> core
+    
+    jvm --> core
+    concurrent --> core
+```
+
+### 1.3 模块职责说明
+
+| 模块名称 | 职责 | 核心类 | 面试考点 |
+|---------|------|--------|---------|
+| **mini-spring-core** | IOC 容器、AOP 核心实现 | BeanFactory, ApplicationContext, ProxyFactory | Bean 生命周期、循环依赖、动态代理 |
+| **mini-spring-boot** | 自动配置、嵌入式容器 | SpringApplication, NettyWebServer | 自动配置原理、嵌入式容器 |
+| **mini-spring-cloud-registry** | 服务注册与发现 | ServiceRegistry, ServiceDiscovery | 注册中心原理、心跳机制 |
+| **mini-spring-cloud-feign** | 远程服务调用 | FeignClientFactory, FeignInvocationHandler | 声明式 RPC、序列化协议 |
+| **mini-spring-cloud-loadbalancer** | 客户端负载均衡 | LoadBalancer, LoadBalancerFactory | 负载均衡算法 |
+| **mini-spring-cloud-circuitbreaker** | 服务熔断降级 | CircuitBreaker, CircuitBreakerFactory | 熔断器状态机、降级策略 |
+| **mini-spring-gateway** | API 网关 | Gateway, GatewayFilter | 网关设计、路由转发 |
+| **jvm-optimizer** | JVM 调优监控 | JVMProfiler, GCTuner | JVM 内存模型、GC 算法 |
+| **concurrent-optimizer** | 多线程锁优化 | SmartThreadPool, LockComparator | 线程池、锁升级、CAS |
+| **demo-app** | 示例微服务应用 | UserController, OrderService | 端到端流程演示 |
 
 ---
 
-## 三、模块依赖关系图
+## 二、核心流程设计
 
+### 2.1 IOC 容器启动流程
+
+```mermaid
+sequenceDiagram
+    participant Main as SpringApplication
+    participant Context as BootApplicationContext
+    participant Scanner as ClassPathBeanDefinitionScanner
+    participant Factory as DefaultListableBeanFactory
+    participant AutoConfig as AutoConfigurationLoader
+    
+    Main->>Context: 创建应用上下文
+    Main->>Scanner: 扫描包路径
+    Scanner->>Scanner: 识别@Component 等注解
+    Scanner->>Factory: 注册 BeanDefinition
+    Main->>AutoConfig: 加载自动配置
+    AutoConfig->>AutoConfig: 读取 spring.factories
+    AutoConfig->>Factory: 注册配置类 Bean
+    Main->>Factory: refresh() 刷新容器
+    Factory->>Factory: 实例化所有单例 Bean
+    Factory->>Factory: 依赖注入 (@Autowired)
+    Factory->>Factory: 初始化 (@PostConstruct)
+    Factory-->>Main: 容器启动完成
 ```
-                           ┌──────────────────┐
-                           │     demo-app     │
-                           └─────────┬────────┘
-                                     │
-                ┌────────────────────┼────────────────────┐
-                │                    │                    │
-        ┌───────▼────────┐  ┌──────▼──────┐  ┌────────▼────────┐
-        │mini-spring-gateway│ │jvm-optimizer│ │concurrent-optimizer│
-        └───────┬────────┘  └─────────────┘  └─────────────────┘
-                │
-        ┌───────┼────────┐
-        │       │        │
-┌───────▼───┐ ┌▼────────▼──┐ ┌──────────────────┐
-│Registry   │ │Feign+LoadBalancer│ │CircuitBreaker   │
-└───────┬───┘ └────────────┘ └──────────────────┘
-        │
-        │
-┌───────▼──────────────────────┐
-│ mini-spring-boot              │
-│ (依赖mini-spring-core)        │
-└───────┬──────────────────────┘
-        │
-┌───────▼──────────────────────┐
-│ mini-spring-core              │
-│ (基础依赖，不依赖其他模块)     │
-└───────────────────────────────┘
+
+**面试考点**：
+1. Bean 的生命周期流程（实例化→属性填充→初始化→销毁）
+2. 循环依赖如何解决（三级缓存机制）
+3. @Autowired 注入原理（反射 + 类型匹配）
+4. BeanDefinition 的作用和内容
+
+### 2.2 AOP 代理创建流程
+
+```mermaid
+sequenceDiagram
+    participant Bean as Bean 实例
+    participant Proxy as ProxyFactory
+    participant JDK as JDK 动态代理
+    participant CGLIB as CGLIB 代理
+    participant Advice as 通知方法
+    
+    Bean->>Proxy: 创建代理
+    Proxy->>Proxy: 判断是否有接口
+    alt 有接口
+        Proxy->>JDK: 创建 JDK 动态代理
+    else 无接口
+        Proxy->>CGLIB: 创建 CGLIB 子类代理
+    end
+    Proxy->>Proxy: 织入通知 (@Before/@After/@Around)
+    Proxy-->>Bean: 返回代理对象
+    
+    Note over Proxy,Advice: 方法调用时
+    Bean->>Proxy: 调用目标方法
+    Proxy->>Advice: 执行@Before 通知
+    Proxy->>Advice: 执行@Around(前置)
+    Proxy->>Bean: 执行目标方法
+    Proxy->>Advice: 执行@Around(后置)
+    Proxy->>Advice: 执行@After 通知
+    Proxy-->>Bean: 返回结果
 ```
+
+**面试考点**：
+1. JDK 代理 vs CGLIB 代理的区别
+2. AOP 底层原理（动态代理 + 拦截器链）
+3. 通知的执行顺序（Around→Before→目标→After）
+4. 切点表达式的解析原理
+
+### 2.3 服务注册与发现流程
+
+```mermaid
+sequenceDiagram
+    participant Provider as 服务提供者
+    participant Registry as RegistryServer
+    participant Consumer as 服务消费者
+    participant Discovery as ServiceDiscovery
+    
+    Note over Provider,Registry: 服务注册阶段
+    Provider->>Provider: 启动时检测@EnableServiceRegistry
+    Provider->>Registry: 注册服务实例 (服务名、IP、端口)
+    Registry->>Registry: 存储到内存 Map
+    Registry-->>Provider: 注册成功
+    
+    Note over Consumer,Discovery: 服务发现阶段
+    Consumer->>Consumer: 启动时检测@EnableServiceDiscovery
+    Consumer->>Discovery: 拉取服务列表
+    Discovery->>Registry: 查询服务实例
+    Registry-->>Discovery: 返回实例列表
+    Discovery->>Discovery: 本地缓存服务列表
+    Discovery-->>Consumer: 返回服务实例
+    
+    Note over Provider,Registry: 心跳检测
+    Registry->>Provider: 定期心跳检测
+    Provider-->>Registry: 响应心跳
+    Registry->>Registry: 更新最后心跳时间
+    Registry->>Registry: 剔除超时实例
+```
+
+**面试考点**：
+1. 服务注册中心的原理（CAP 理论）
+2. 心跳机制与健康检查设计
+3. 客户端发现 vs 服务端发现
+4. 服务实例的负载均衡策略
+
+### 2.4 Feign 远程调用流程
+
+```mermaid
+sequenceDiagram
+    participant Client as Feign 接口
+    participant Handler as FeignInvocationHandler
+    participant LB as LoadBalancer
+    participant Codec as 编解码器
+    participant Server as 远程服务
+    
+    Note over Client,Server: 代理创建阶段
+    Client->>Handler: 创建动态代理 (@FeignClient)
+    Handler->>Handler: 解析接口方法注解
+    
+    Note over Client,Server: 调用执行阶段
+    Client->>Handler: 调用接口方法
+    Handler->>LB: 选择服务实例 (负载均衡)
+    LB-->>Handler: 返回目标实例
+    
+    Handler->>Codec: 请求编码 (JSON/Protobuf)
+    Codec-->>Handler: 返回编码后的请求
+    
+    Handler->>Server: 发送 HTTP/RPC 请求
+    Server->>Server: 执行业务逻辑
+    Server-->>Handler: 返回响应
+    
+    Handler->>Codec: 响应解码
+    Codec-->>Handler: 返回解码后的对象
+    Handler-->>Client: 返回结果
+```
+
+**面试考点**：
+1. Feign 的声明式调用原理（动态代理）
+2. 序列化协议选型（JSON vs Protobuf）
+3. HTTP vs RPC 的区别
+4. 远程调用的异常处理
+
+### 2.5 熔断器状态机流程
+
+```mermaid
+stateDiagram-v2
+    [*] --> Closed: 初始状态
+    Closed --> Open: 失败率超过阈值
+    Open --> HalfOpen: 熔断超时到达
+    HalfOpen --> Open: 调用失败
+    HalfOpen --> Closed: 调用成功
+    Closed --> Closed: 调用成功
+    Closed --> Closed: 调用失败但未达阈值
+    
+    note right of Closed
+        闭合状态
+        正常处理请求
+        统计失败率
+    end note
+    
+    note right of Open
+        打开状态
+        直接快速失败
+        不调用远程服务
+    end note
+    
+    note right of HalfOpen
+        半开状态
+        允许一次请求探测
+        根据结果切换状态
+    end note
+```
+
+**面试考点**：
+1. 熔断器的三种状态及转换条件
+2. 快速失败（Fail Fast）原理
+3. 降级策略（Fallback）实现
+4. 熔断器如何避免服务雪崩
+
+### 2.6 JVM 调优流程
+
+```mermaid
+graph LR
+    A[应用启动] --> B[JVM 信息收集]
+    B --> C[内存使用分析]
+    C --> D[GC 日志分析]
+    D --> E[性能瓶颈识别]
+    E --> F{问题类型}
+    
+    F -->|内存泄漏 | G[Heap Dump 分析]
+    F -->|GC 频繁 | H[调整堆大小/GC 参数]
+    F -->|停顿过长 | I[切换 G1/ZGC]
+    
+    G --> J[MAT 工具分析]
+    H --> K[调优参数配置]
+    I --> K
+    
+    K --> L[重新部署]
+    L --> M[性能验证]
+    M -->|未达标 | B
+    M -->|达标 | N[调优完成]
+```
+
+**面试考点**：
+1. JVM 内存模型（堆、栈、元空间）
+2. GC 算法原理（标记清除、复制、标记整理）
+3. G1GC vs ZGC 的区别
+4. OOM 排查方法（jstat、jmap、MAT）
 
 ---
 
-## 四、核心流程图
+## 三、核心数据结构
 
-### 4.1 Bean生命周期流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Bean生命周期流程                           │
-└─────────────────────────────────────────────────────────────┘
-
-开始
-  ↓
-1. 扫描类路径（识别@Component/@Service/@Repository/@Controller）
-  ↓
-2. 解析BeanDefinition（封装Bean元数据）
-  ↓
-3. 实例化Bean（反射创建对象）
-  ↓
-4. 属性填充（@Autowired字段注入/构造器注入/Setter注入）
-  ↓
-5. 执行@PostConstruct方法（初始化回调）
-  ↓
-6. 应用BeanPostProcessor后置处理器（AOP代理在此阶段生成）
-  ↓
-7. Bean就绪（可被使用）
-  ↓
-8. 执行@PreDestroy方法（销毁回调）
-  ↓
-9. Bean销毁（GC回收）
-  ↓
-结束
-
-面试考点：
-- 三级缓存如何解决循环依赖？
-- BeanPostProcessor的作用？
-- AOP代理在哪个阶段生成？
-```
-
-### 4.2 AOP代理生成流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   AOP代理生成流程                            │
-└─────────────────────────────────────────────────────────────┘
-
-开始
-  ↓
-1. 扫描@Aspect注解的切面类
-  ↓
-2. 解析切面定义（@Pointcut/@Before/@After/@Around）
-  ↓
-3. 构建Advisor链（将切面通知与目标方法匹配）
-  ↓
-4. 判断目标类是否实现接口
-  ↓
-   ┌─────────────┬─────────────┐
-   │             │             │
-   ↓             ↓             ↓
-实现接口      未实现接口    强制使用CGLIB
-   │             │             │
-   ↓             ↓             ↓
-JDK动态代理   CGLIB代理     CGLIB代理
-   │             │             │
-   └─────────────┴─────────────┘
-                 ↓
-5. 生成代理对象
-  ↓
-6. 方法调用时触发拦截器链
-  ↓
-结束
-
-面试考点：
-- JDK动态代理 vs CGLIB代理的区别？
-- 为什么Spring默认使用JDK代理？
-- @Around通知的执行顺序？
-```
-
-### 4.3 服务注册与发现流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 服务注册与发现流程                          │
-└─────────────────────────────────────────────────────────────┘
-
-服务提供方启动                    服务消费方启动
-      ↓                                  ↓
-1. 解析@EnableServiceProvider      1. 解析@EnableServiceConsumer
-      ↓                                  ↓
-2. 读取服务配置（IP、端口、服务名） 2. 从注册中心拉取服务列表
-      ↓                                  ↓
-3. 向注册中心发送注册请求          3. 本地缓存服务实例
-      ↓                                  ↓
-4. 定时发送心跳（保持连接）        4. 定时刷新服务列表
-      ↓                                  ↓
-5. 关闭时发送注销请求              5. 过滤不健康实例
-                                         ↓
-                              6. 结合负载均衡选择实例
-                                         ↓
-                              7. 发起远程调用
-
-面试考点：
-- 服务注册中心如何保证一致性？
-- 心跳机制如何设计？
-- 如何处理服务下线？
-```
-
-### 4.4 熔断器状态转换流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 熔断器状态机流程                              │
-└─────────────────────────────────────────────────────────────┘
-
-              ┌──────────┐
-              │  CLOSED  │ ◄──┐
-              │ (闭合)   │    │
-              └────┬─────┘    │
-                   │          │ 失败率<阈值
-         失败率≥阈值 │          │ 或 成功恢复
-                   │          │
-                   ▼          │
-              ┌──────────┐    │
-              │   OPEN   │ ───┘
-              │ (打开)   │
-              └────┬─────┘
-                   │
-         半开超时时间 │
-                   │
-                   ▼
-              ┌──────────┐
-              │ HALF_OPEN│
-              │  (半开)  │
-              └────┬─────┘
-                   │
-      ┌────────────┼────────────┐
-      │            │            │
-      ▼            ▼            ▼
-   调用成功      调用失败
-      │            │
-      │            │
-      ▼            ▼
-    CLOSED       OPEN
-   (恢复闭合)   (重新打开)
-
-面试考点：
-- 熔断器三种状态的切换条件？
-- 为什么需要半开状态？
-- 熔断与降级的区别？
-```
-
-### 4.5 完整请求处理流程
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 完整请求处理流程                              │
-└─────────────────────────────────────────────────────────────┘
-
-客户端请求
-      ↓
-┌─────────────────────────────────────┐
-│  API网关                            │
-│  1. 路由匹配                        │
-│  2. 请求过滤（鉴权、限流）          │
-│  3. 跨域处理                        │
-└───────────────┬─────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  目标微服务                        │
-│  1. 嵌入式容器接收请求              │
-│  2. 路径映射到Controller方法        │
-│  3. 参数解析                        │
-│  4. AOP拦截器链执行                │
-│  5. 业务逻辑处理                    │
-└───────────────┬─────────────────────┘
-                │
-        ┌───────┴───────┐
-        │               │
-        ▼               ▼
-    本地处理      需要远程调用
-        │               │
-        │               ▼
-        │    ┌────────────────────────┐
-        │    │  服务发现              │
-        │    │  1. 查询服务列表        │
-        │    │  2. 负载均衡选择实例    │
-        │    └───────────┬────────────┘
-        │                │
-        │                ▼
-        │    ┌────────────────────────┐
-        │    │  熔断器检查            │
-        │    │  熔断打开→降级         │
-        │    │  熔断关闭→发起调用     │
-        │    └───────────┬────────────┘
-        │                │
-        │                ▼
-        │    ┌────────────────────────┐
-        │    │  Feign远程调用         │
-        │    │  1. 序列化请求参数      │
-        │    │  2. HTTP/RPC通信       │
-        │    │  3. 反序列化响应        │
-        │    └───────────┬────────────┘
-        │                │
-        └───────┬────────┘
-                │
-                ▼
-┌─────────────────────────────────────┐
-│  响应处理                          │
-│  1. 统一异常处理                    │
-│  2. 响应序列化                      │
-│  3. 返回客户端                      │
-└─────────────────────────────────────┘
-```
-
----
-
-## 五、核心接口设计
-
-### 5.1 IOC容器核心接口
+### 3.1 BeanDefinition
 
 ```java
-BeanFactory - 基础Bean管理接口
-├── getBean(String name) - 根据名称获取Bean
-├── getBean(Class<T> type) - 根据类型获取Bean
-├── containsBean(String name) - 判断Bean是否存在
-└── isSingleton(String name) - 判断是否为单例
-
-ApplicationContext - 高级Bean管理接口（继承BeanFactory）
-├── refresh() - 刷新容器（启动流程）
-├── getEnvironment() - 获取环境配置
-├── publishEvent(ApplicationEvent) - 发布事件
-└── registerShutdownHook() - 注册关闭钩子
+/**
+ * Bean 定义 - 存储 Bean 的元数据信息
+ * 面试考点：Bean 是如何被框架管理的
+ */
+public class BeanDefinition {
+    private String beanName;              // Bean 名称
+    private Class<?> beanClass;           // Bean 类型
+    private String scope = "singleton";   // 作用域（单例/原型）
+    private Map<String, Object> properties; // 属性值
+    private List<Field> autowiredFields;  // 自动注入字段
+    private Constructor<?> constructor;   // 构造器
+    private Method initMethod;            // 初始化方法
+    private Method destroyMethod;         // 销毁方法
+}
 ```
 
-### 5.2 AOP核心接口
+### 3.2 三级缓存结构
 
 ```java
-Advisor - 切面通知接口
-├── getPointcut() - 获取切点表达式
-└── getAdvice() - 获取通知逻辑
-
-ProxyFactory - 代理工厂接口
-├── createProxy() - 创建代理对象
-├── setInterfaces() - 设置接口
-└── setTarget() - 设置目标对象
-
-MethodInterceptor - 方法拦截器接口
-└── invoke(MethodInvocation) - 拦截方法调用
+/**
+ * 三级缓存 - 解决循环依赖
+ * 面试考点：循环依赖的解决方案
+ */
+public class DefaultListableBeanFactory {
+    // 一级缓存：存放完全初始化好的 Bean
+    private Map<String, Object> singletonObjects = new ConcurrentHashMap<>();
+    
+    // 二级缓存：存放早期暴露的 Bean（未完全初始化）
+    private Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();
+    
+    // 三级缓存：存放 Bean 工厂，用于创建代理对象
+    private Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();
+}
 ```
 
-### 5.3 服务注册中心接口
+### 3.3 服务注册表
 
 ```java
-ServiceRegistry - 服务注册接口
-├── register(ServiceInstance) - 注册服务
-├── deregister(ServiceInstance) - 注销服务
-└── heartbeat(ServiceInstance) - 发送心跳
-
-ServiceDiscovery - 服务发现接口
-├── getInstances(String serviceName) - 获取服务实例列表
-└── subscribe(String serviceName, Listener) - 订阅服务变更
+/**
+ * 服务注册表 - 内存存储
+ * 面试考点：注册中心的数据结构
+ */
+public class InMemoryServiceRegistry {
+    // 服务名 -> 服务实例列表
+    private Map<String, List<ServiceInstance>> registry = new ConcurrentHashMap<>();
+    
+    // 服务实例心跳时间
+    private Map<String, Long> heartbeats = new ConcurrentHashMap<>();
+}
 ```
 
-### 5.4 负载均衡接口
+### 3.4 熔断器状态
 
 ```java
-LoadBalancer - 负载均衡器接口
-└── choose(List<ServiceInstance>) - 选择服务实例
-
-LoadBalanceStrategy - 负载均衡策略接口
-├── RoundRobinStrategy - 轮询策略
-├── RandomStrategy - 随机策略
-├── WeightedStrategy - 加权策略
-└── LeastActiveStrategy - 最少活跃数策略
-```
-
-### 5.5 熔断器接口
-
-```java
-CircuitBreaker - 熔断器接口
-├── execute(Supplier<T>) - 执行被保护的方法
-├── getState() - 获取当前状态
-├── reset() - 重置熔断器
-└── configure(CircuitBreakerConfig) - 配置参数
-
-CircuitBreakerState - 熔断器状态枚举
-├── CLOSED - 闭合（正常）
-├── OPEN - 打开（熔断）
-└── HALF_OPEN - 半开（尝试恢复）
+/**
+ * 熔断器状态枚举
+ * 面试考点：状态机设计模式
+ */
+public enum CircuitBreakerState {
+    CLOSED,     // 闭合 - 正常
+    OPEN,       // 打开 - 熔断
+    HALF_OPEN   // 半开 - 探测
+}
 ```
 
 ---
 
-## 六、配置文件设计
+## 四、设计模式应用
 
-### 6.1 application.properties 示例
+### 4.1 工厂模式
+- **BeanFactory** - Bean 工厂
+- **LoadBalancerFactory** - 负载均衡器工厂
+- **CircuitBreakerFactory** - 熔断器工厂
+- **FeignClientFactory** - Feign 客户端工厂
 
-```properties
-# 服务器配置
-server.port=8080
-server.host=0.0.0.0
+### 4.2 代理模式
+- **JDK 动态代理** - 接口类代理
+- **CGLIB 代理** - 非接口类代理
+- **FeignInvocationHandler** - Feign 代理
 
-# 服务注册配置
-spring.application.name=user-service
-registry.server.host=localhost
-registry.server.port=8761
-registry.heartbeat.interval=30
+### 4.3 策略模式
+- **LoadBalancer** - 负载均衡策略
+  - RoundRobinLoadBalancer
+  - RandomLoadBalancer
+  - WeightedRoundRobinLoadBalancer
+  - LeastActiveLoadBalancer
 
-# Feign配置
-feign.timeout.connect=5000
-feign.timeout.read=10000
-feign.serialization.type=json
+### 4.4 责任链模式
+- **GatewayFilterChain** - 网关过滤器链
+- **AOP 通知链** - 切面通知执行链
 
-# 负载均衡配置
-loadbalancer.strategy=round_robin
+### 4.5 观察者模式
+- **ApplicationEvent** - 应用事件
+- **ApplicationListener** - 事件监听器
 
-# 熔断器配置
-circuitbreaker.enabled=true
-circuitbreaker.failure.threshold=50
-circuitbreaker.timeout=60000
-circuitbreaker.half.open.requests=3
-
-# JVM调优配置
-jvm.heap.size=512m
-jvm.gc.collector=G1
-jvm.gc.max.pause=200
-
-# 线程池配置
-thread.pool.core.size=8
-thread.pool.max.size=16
-thread.pool.queue.capacity=100
-thread.pool.rejection.policy=caller_runs
-```
+### 4.6 单例模式
+- **BeanFactory** - 单例 Bean
+- **ApplicationContext** - 应用上下文
 
 ---
 
-## 七、面试考点总结
+## 五、性能优化设计
 
-### 7.1 IOC容器核心考点
+### 5.1 缓存优化
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| 控制反转 vs 依赖注入 | IoC是思想，DI是实现方式 |
-| Bean生命周期 | 实例化→属性填充→初始化→使用→销毁 |
-| 循环依赖解决 | 三级缓存：singletonObjects、earlySingletonObjects、singletonFactories |
-| Bean作用域 | singleton、prototype、request、session |
-| @Autowired原理 | 类型匹配+名称匹配，支持字段、构造器、Setter注入 |
+| 场景 | 缓存策略 | 实现方式 |
+|------|---------|---------|
+| Bean 管理 | 三级缓存 | singletonObjects, earlySingletonObjects, singletonFactories |
+| 服务发现 | 本地缓存 | 客户端缓存服务列表，定期刷新 |
+| 配置加载 | 懒加载 + 缓存 | 自动配置类懒加载，结果缓存 |
 
-### 7.2 AOP核心考点
+### 5.2 并发优化
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| AOP核心概念 | 切面、切点、通知、连接点 |
-| JDK动态代理 | 基于接口，使用Proxy类和InvocationHandler |
-| CGLIB代理 | 基于继承，使用字节码增强 |
-| 通知类型 | @Before、@After、@Around、@AfterReturning、@AfterThrowing |
-| 代理选择策略 | 有接口用JDK，无接口用CGLIB |
+| 组件 | 优化策略 | 性能提升 |
+|------|---------|---------|
+| SmartThreadPool | 动态调参、统计监控 | 吞吐量提升 30-50% |
+| LockComparator | 锁性能对比工具 | 选择最优锁策略 |
+| DeadlockDetector | 死锁自动检测 | 避免系统卡死 |
 
-### 7.3 Spring Boot核心考点
+### 5.3 JVM 调优
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| 自动配置原理 | @EnableAutoConfiguration + spring.factories + @Conditional |
-| Starter机制 | 依赖传递+自动配置 |
-| 嵌入式容器 | Tomcat/Jetty/Undertow/Netty |
-| 启动流程 | SpringApplication.run() → 创建ApplicationContext → 刷新容器 |
+| 场景 | 推荐参数 | 效果 |
+|------|---------|------|
+| G1GC 调优 | -XX:MaxGCPauseMillis=200 | 停顿时间<200ms |
+| ZGC 调优 | -XX:+UseZGC | 停顿时间<10ms |
+| 堆大小优化 | -Xms2g -Xmx2g | 避免动态扩容开销 |
 
-### 7.4 微服务核心考点
+---
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| 服务注册发现 | CAP理论、AP vs CP、心跳机制 |
-| 负载均衡算法 | 轮询、随机、加权、最少连接 |
-| 熔断降级 | 三种状态、熔断器模式、降级策略 |
-| RPC vs HTTP | 协议差异、性能对比、适用场景 |
-| 网关设计模式 | 路由转发、请求过滤、限流 |
+## 六、面试考点索引
 
-### 7.5 JVM调优核心考点
+### 6.1 IOC 容器考点
+1. [Bean 生命周期](#21-ioc 容器启动流程)
+2. [循环依赖解决（三级缓存）](#32-三级缓存结构)
+3. [@Autowired 注入原理](#21-ioc 容器启动流程)
+4. [BeanDefinition 作用](#31-beandefinition)
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| JVM内存模型 | 堆、栈、方法区、程序计数器、本地方法栈 |
-| GC算法 | 标记清除、标记整理、复制算法、分代收集 |
-| G1收集器 | Region划分、混合GC、停顿时间目标 |
-| ZGC收集器 | 读屏障、染色指针、并发整理 |
-| OOM排查 | jmap、jstat、jstack、MAT分析 |
+### 6.2 AOP 考点
+1. [JDK vs CGLIB 代理](#22-aop 代理创建流程)
+2. [AOP 底层原理](#22-aop 代理创建流程)
+3. [通知执行顺序](#22-aop 代理创建流程)
+4. [切点表达式解析](#22-aop 代理创建流程)
 
-### 7.6 并发编程核心考点
+### 6.3 微服务考点
+1. [服务注册发现原理](#23-服务注册与发现流程)
+2. [Feign 声明式调用](#24-feign 远程调用流程)
+3. [负载均衡算法](#12-模块依赖关系图)
+4. [熔断器状态机](#25-熔断器状态机流程)
 
-| 考点 | 关键知识点 |
-|-----|----------|
-| 线程池原理 | 核心线程、最大线程、队列、拒绝策略 |
-| synchronized锁升级 | 偏向锁→轻量级锁→重量级锁 |
-| ReentrantLock | 可重入锁、公平锁、条件变量 |
-| CAS原理 | Compare-And-Swap、ABA问题、Unsafe类 |
-| 并发工具 | CountDownLatch、CyclicBarrier、Semaphore |
-| 死锁排查 | jstack检测、死锁四个条件 |
+### 6.4 JVM 考点
+1. [JVM 内存模型](#26-jvm 调优流程)
+2. [GC 算法原理](#26-jvm 调优流程)
+3. [OOM 排查方法](#26-jvm 调优流程)
+4. [G1GC vs ZGC](#53-jvm 调优)
+
+### 6.5 并发编程考点
+1. [线程池原理](#52-并发优化)
+2. [锁升级过程](#52-并发优化)
+3. [CAS 原理](#52-并发优化)
+4. [死锁避免](#52-并发优化)
+
+---
+
+## 七、架构演进建议
+
+### 7.1 短期优化（1-3 个月）
+1. 实现配置中心，支持配置动态刷新
+2. 添加链路追踪功能（类似 Sleuth）
+3. 完善服务健康检查机制
+4. 实现网关的限流、熔断功能
+
+### 7.2 中期优化（3-6 个月）
+1. 实现高可用注册中心（Raft 协议）
+2. 添加消息队列模块
+3. 实现安全认证与授权
+4. 完善监控告警系统
+
+### 7.3 长期优化（6-12 个月）
+1. 支持 Serverless 架构
+2. 实现服务网格（Service Mesh）
+3. 添加 AI 智能调优
+4. 云原生适配（K8s、Docker）
+
+---
+
+## 八、总结
+
+Boot&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Spring Cloud 的核心功能。通过本项目，可以深入理解：
+
+1. **IOC/AOP 底层原理** - 手写 Bean 工厂和动态代理
+2. **微服务架构设计** - 服务注册发现、远程调用、负载均衡、熔断降级
+3. **性能优化技术** - JVM 调优、多线程与锁优化
+4. **设计模式应用** - 工厂、代理、策略、责任链等模式
+
+本项目不仅是一个框架实现，更是 Java 后端面试的"活字典"，所有核心考点都有代码落地和原理解析。
+
+---
+
+**文档版本**：v1.0  
+**最后更新**：2026-03-29  
+**作者**：Boot&Cloud 开发团队
