@@ -1,14 +1,15 @@
-# Boot&Cloud 项目完成情况与待办事项
+# Boot\&Cloud 项目完成情况与待办事项
 
 > 本文档按照项目规则要求，明确记录已完成工作、待完成模块、待解决问题及后续开发建议。
 
----
+***
 
 ## 一、已完成工作
 
 ### 1.1 核心模块实现（完成度：95%）
 
 #### 核心容器层 ✅
+
 - **mini-spring-core** - IOC 容器与 AOP 核心实现
   - ✅ 自定义注解：@Component, @Service, @Repository, @Controller, @Autowired
   - ✅ 生命周期注解：@PostConstruct, @PreDestroy
@@ -18,7 +19,6 @@
   - ✅ AOP 动态代理（JDK 动态代理 + CGLIB）
   - ✅ 切面注解：@Aspect, @Before, @After, @Around, @Pointcut
   - ✅ 单元测试：IoCTest, AopTest（覆盖率≥80%）
-
 - **mini-spring-boot** - 自动配置与嵌入式容器
   - ✅ 自定义注解：@SpringBootApplication, @EnableAutoConfiguration
   - ✅ 条件注解：@ConditionalOnClass, @ConditionalOnProperty
@@ -30,6 +30,7 @@
   - ✅ SpringApplication 启动类
 
 #### 微服务组件层 ✅
+
 - **mini-spring-cloud-registry** - 服务注册与发现
   - ✅ 服务注册接口与 InMemoryServiceRegistry 实现
   - ✅ 服务发现接口与 DefaultServiceDiscovery 实现
@@ -37,7 +38,6 @@
   - ✅ ServiceInstance 服务实例模型
   - ✅ RegistryServer 注册中心服务器
   - ✅ 单元测试：ServiceRegistryTest, ServiceDiscoveryTest
-
 - **mini-spring-cloud-feign** - 远程服务调用
   - ✅ 声明式调用注解：@FeignClient
   - ✅ HTTP 映射注解：@GetMapping, @PostMapping, @RequestMapping
@@ -46,7 +46,6 @@
   - ✅ 序列化：JsonEncoder, JsonDecoder
   - ✅ FeignClientFactory 工厂类
   - ✅ 单元测试：FeignClientTest
-
 - **mini-spring-cloud-loadbalancer** - 客户端负载均衡
   - ✅ 注解：@LoadBalanced
   - ✅ LoadBalancer 接口定义
@@ -57,7 +56,6 @@
     - LeastActiveLoadBalancer（最少活跃数）
   - ✅ LoadBalancerFactory 工厂类
   - ✅ 单元测试：LoadBalancerTest
-
 - **mini-spring-cloud-circuitbreaker** - 服务熔断与降级
   - ✅ 注解：@CircuitBreaker
   - ✅ CircuitBreaker 接口与状态枚举
@@ -66,7 +64,6 @@
   - ✅ CircuitBreakerOpenException 异常类
   - ✅ CircuitBreakerFactory 工厂类
   - ✅ 单元测试：CircuitBreakerTest
-
 - **mini-spring-gateway** - API 网关
   - ✅ Gateway 接口与 DefaultGateway 实现
   - ✅ Route 路由配置模型
@@ -76,13 +73,13 @@
   - ✅ 单元测试：GatewayTest
 
 #### 性能优化层 ✅
+
 - **jvm-optimizer** - JVM 调优与监控
   - ✅ JVMInfo - JVM 信息获取（内存、GC、线程、类加载）
   - ✅ JVMProfiler - JVM 性能分析器
   - ✅ GCTuner - GC 调优建议生成器
   - ✅ MemoryLeakSimulator - 内存泄漏模拟器
   - ✅ 单元测试：JVMInfoTest, GCTunerTest
-
 - **concurrent-optimizer** - 多线程与锁优化
   - ✅ SmartThreadPool - 智能线程池（支持动态调参）
   - ✅ LockComparator - 锁性能对比工具
@@ -91,6 +88,7 @@
   - ✅ 单元测试：全部 4 个测试类（覆盖率≥80%）
 
 #### 示例应用层 ✅
+
 - **demo-app** - 完整微服务示例
   - ✅ user-service：用户服务（UserController, UserService, UserRepository, User 模型）
   - ✅ order-service：订单服务（OrderController, OrderService, Order 模型）
@@ -98,61 +96,25 @@
   - ✅ Application 启动类与数据初始化
 
 ### 1.2 单元测试（完成度：90%）
+
 - ✅ 所有核心模块均包含单元测试
 - ✅ 测试覆盖率目标：≥80%
 - ✅ 测试框架：JUnit 5
 
 ### 1.3 基础文档（完成度：75%）
+
 - ✅ README.md - 项目说明文档（基础内容完整）
 - ✅ AGENTS.md - 智能体开发规则
 - ✅ pom.xml - Maven 父子项目配置
 
----
+***
 
-## 二、待完成模块（按优先级排序）
-
-### 高优先级 🔴
-
-#### 1. 整体架构文档（ARCHITECTURE.md）
-- **优先级**：P0 - 必须完成
-- **功能点**：
-  - 架构分层说明（核心容器层→微服务组件层→性能优化层→示例应用层）
-  - 模块依赖关系图
-  - 核心流程图（Bean 生命周期、服务注册发现、远程调用、熔断状态切换）
-- **交付要求**：
-  - Markdown 格式的架构设计文档
-  - 使用 Mermaid 或 PlantUML 绘制可视化图表
-  - 提供源文件 + PNG 导出版（如适用）
-- **预计工作量**：2-3 小时
-
-#### 2. 面试题总结文档（INTERVIEW_QUESTIONS.md）
-- **优先级**：P0 - 必须完成
-- **功能点**：
-  - 按模块分类整理高频面试题（IOC、AOP、自动配置、服务治理、JVM 调优、并发编程）
-  - 每模块 5-10 道高频考题
-  - 标准应答 + 原理延伸 + 代码示例
-- **交付要求**：
-  - 贴合大厂面试风格
-  - 可直接用于面试背诵与讲解
-  - 与代码强关联，引用具体类名和方法
-- **预计工作量**：4-6 小时
-
-#### 3. README.md 补充完善
-- **优先级**：P0 - 必须完成
-- **缺失内容**：
-  - 压测数据（JVM 调优前后对比、线程池优化前后对比）
-  - 端到端功能演示步骤
-  - 核心流程图示
-  - 面试考点快速索引
-- **交付要求**：
-  - 提供可复现的压测测试用例
-  - 详细的启动步骤和访问示例
-  - 性能数据表格化呈现
-- **预计工作量**：2-3 小时
+<br />
 
 ### 中优先级 🟡
 
 #### 4. 代码注释增强
+
 - **优先级**：P1 - 重要
 - **功能点**：
   - 核心代码添加面试考点标注（如"此处使用三级缓存解决循环依赖"）
@@ -165,6 +127,7 @@
 - **预计工作量**：3-4 小时
 
 #### 5. 性能测试用例
+
 - **优先级**：P1 - 重要
 - **功能点**：
   - JVM 调优性能对比测试
@@ -179,6 +142,7 @@
 ### 低优先级 🟢
 
 #### 6. 配置优化
+
 - **优先级**：P2 - 可选
 - **功能点**：
   - 统一的 application.properties/yml 示例配置
@@ -189,6 +153,7 @@
 - **预计工作量**：1-2 小时
 
 #### 7. 启动脚本
+
 - **优先级**：P2 - 可选
 - **功能点**：
   - Windows/Linux启动脚本
@@ -198,96 +163,66 @@
   - 包含环境检查和依赖验证
 - **预计工作量**：1-2 小时
 
----
+***
 
 ## 三、待解决问题
 
 ### 3.1 代码层面
+
 1. **循环依赖解决**：当前是否实现了三级缓存机制？需要验证并补充
 2. **AOP 切点表达式解析**：是否支持完整的 AspectJ 切点表达式？
 3. **服务健康检查**：注册中心是否实现了心跳检测和健康检查机制？
 4. **Feign 负载均衡集成**：@LoadBalanced 是否与 Feign 客户端集成？
 
 ### 3.2 文档层面
-1. **架构图可视化**：使用何种工具绘制架构图（Mermaid/PlantUML/Draw.io）？
+
+1. **架构图可视化**：使用何种工具绘制架构图（Mermaid/PlantUML/Draw\.io）？
 2. **面试题范围**：需要覆盖哪些模块的面试题？优先级如何？
 3. **压测数据收集**：使用何种工具进行压测（JMH/JMeter）？
 
 ### 3.3 测试层面
+
 1. **集成测试缺失**：当前只有单元测试，缺少端到端集成测试
 2. **测试覆盖率统计**：需要配置 JaCoCo 插件生成覆盖率报告
 3. **性能基准测试**：缺少性能基准测试用例
 
----
+***
 
 ## 四、后续开发建议
 
 ### 4.1 功能扩展（可选）
+
 1. **配置中心**：实现简单的配置中心，支持配置动态刷新
 2. **链路追踪**：集成简单的链路追踪功能（类似 Sleuth）
 3. **消息队列**：实现简单的事件总线/消息队列模块
 4. **安全认证**：添加基础的身份认证与授权模块
 
 ### 4.2 性能优化
+
 1. **缓存优化**：在 Bean 工厂、服务发现等场景添加缓存机制
 2. **异步优化**：使用异步非阻塞 IO 优化网络通信
 3. **连接池**：实现 HTTP 连接池、数据库连接池（如需要）
 
 ### 4.3 文档完善
+
 1. **API 文档**：使用 Javadoc 生成 API 文档
 2. **开发指南**：编写开发者指南，说明如何扩展框架
 3. **最佳实践**：总结使用本框架的最佳实践和常见陷阱
 
 ### 4.4 面试强化
+
 1. **考点映射**：在代码中添加`@InterviewPoint`注解标记考点
 2. **视频讲解**：录制核心功能的实现原理讲解视频（可选）
 3. **面试模拟**：提供面试模拟问题和参考答案
 
----
-
-## 五、交付物清单与状态
-
-| 交付物 | 状态 | 完成度 | 备注 |
-|--------|------|--------|------|
-| 模块化源码 | ✅ 完成 | 95% | 10 个核心模块 |
-| 单元测试 | ✅ 完成 | 90% | 覆盖率≥80% |
-| README.md | ⚠️ 进行中 | 75% | 需补充压测数据 |
-| 整体架构图 | ❌ 缺失 | 0% | **待完成** |
-| 面试题总结 | ❌ 缺失 | 0% | **待完成** |
-| 压测数据 | ❌ 缺失 | 0% | **待完成** |
-| TODO.md | ✅ 完成 | 100% | 本文档 |
-
-**总体完成度：约 65%**
-
----
-
-## 六、下一步行动计划
-
-### 立即执行（本周）
-1. ✅ 创建 TODO.md（本文档）
-2. 🔲 创建 ARCHITECTURE.md（整体架构文档）
-3. 🔲 创建 INTERVIEW_QUESTIONS.md（面试题总结）
-4. 🔲 补充 README.md 压测数据和演示步骤
-
-### 短期计划（下周）
-1. 🔲 增强代码注释（面试考点标注）
-2. 🔲 完善性能测试用例
-3. 🔲 配置 JaCoCo 覆盖率统计
-
-### 中期计划（本月）
-1. 🔲 实现集成测试
-2. 🔲 补充配置示例
-3. 🔲 编写启动脚本
-
----
-
-## 七、联系与反馈
+七、联系与反馈
 
 如有问题或建议，请通过以下方式反馈：
-- 项目仓库：[GitHub Repository]
-- 问题反馈：[Issues]
 
----
+- 项目仓库：\[GitHub Repository]
+- 问题反馈：\[Issues]
 
-**最后更新时间**：2026-03-29  
-**文档维护者**：Boot&Cloud 开发团队
+***
+
+**最后更新时间**：2026-03-29\
+**文档维护者**：Boot\&Cloud 开发团队
