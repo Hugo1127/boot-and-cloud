@@ -152,21 +152,25 @@ Boot&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring
 
 ## 待完成模块
 
-### ⏳ 微服务组件层（0%）
+### ✅ 微服务组件层（80%）
 
-#### mini-spring-cloud-registry
-- 服务注册中心实现
-- 服务注册与发现
-- 心跳机制
-- 健康检查
+#### mini-spring-cloud-registry（已完成）
+- **服务注册中心实现**：基于Netty的RESTful API
+- **服务注册与发现**：支持服务实例注册、注销、查询
+- **心跳机制**：服务实例定期发送心跳维持活跃状态
+- **健康检查**：定期检查服务实例健康状态，剔除不可用实例
 
-**计划实现**：
-- `ServiceRegistry`接口
-- `ServiceDiscovery`接口
-- 内存存储实现
-- 心跳检测机制
+**核心接口**：
+- `ServiceRegistry`：服务注册接口
+- `ServiceDiscovery`：服务发现接口
+- `ServiceInstance`：服务实例模型
 
-#### mini-spring-cloud-feign
+**实现类**：
+- `InMemoryServiceRegistry`：基于内存的服务注册中心
+- `DefaultServiceDiscovery`：默认服务发现实现，支持本地缓存
+- `RegistryServer`：基于Netty的注册中心服务器
+
+#### mini-spring-cloud-feign（待实现）
 - 远程服务调用
 - 声明式RPC
 - HTTP/RPC通信
@@ -178,48 +182,78 @@ Boot&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring
 - HTTP客户端
 - JSON/Protobuf序列化
 
-#### mini-spring-cloud-loadbalancer
-- 客户端负载均衡
-- 多种负载均衡策略
-- 权重支持
+#### mini-spring-cloud-loadbalancer（已完成）
+- **客户端负载均衡**：在客户端选择目标服务实例
+- **多种负载均衡策略**：支持4种常用策略
+- **权重支持**：支持通过元数据配置实例权重
 
-**计划实现**：
-- `LoadBalancer`接口
-- 轮询策略
-- 随机策略
-- 加权策略
-- 最少活跃数策略
+**核心接口**：
+- `LoadBalancer`：负载均衡接口
+- `LoadBalancerFactory`：负载均衡器工厂
 
-#### mini-spring-cloud-circuitbreaker
-- 服务熔断与降级
-- 状态机管理
-- 降级策略
+**实现类**：
+- `RoundRobinLoadBalancer`：轮询策略
+- `RandomLoadBalancer`：随机策略
+- `WeightedRoundRobinLoadBalancer`：加权轮询策略
+- `LeastActiveLoadBalancer`：最少活跃数策略
 
-**计划实现**：
-- `CircuitBreaker`接口
-- 三种状态：CLOSED、OPEN、HALF_OPEN
-- 熔断策略
-- 降级方法支持
+#### mini-spring-cloud-circuitbreaker（已完成）
+- **服务熔断与降级**：防止服务雪崩，提供降级方案
+- **状态机管理**：CLOSED、OPEN、HALF_OPEN三种状态
+- **降级策略**：支持配置降级方法
 
-#### mini-spring-gateway
-- API网关
-- 路由转发
-- 请求过滤
-- 限流
+**核心接口**：
+- `CircuitBreaker`：熔断器接口
+- `CircuitBreakerConfig`：熔断器配置
+- `CircuitBreakerState`：熔断器状态枚举
 
-**计划实现**：
-- 路由规则配置
-- 请求过滤器
-- 负载均衡集成
-- 基础限流
+**实现类**：
+- `DefaultCircuitBreaker`：默认熔断器实现
+- `CircuitBreakerFactory`：熔断器工厂
+- `CircuitBreakerOpenException`：熔断打开异常
 
-### ⏳ 示例应用层（0%）
+#### mini-spring-gateway（已完成）
+- **API网关**：作为微服务的统一入口
+- **路由转发**：根据请求路径转发到对应微服务
+- **请求过滤**：支持过滤器链处理请求
+- **限流**：基于客户端ID的限流功能
 
-#### demo-app
-- user-service：用户服务示例
-- order-service：订单服务示例
-- goods-service：商品服务示例
-- 端到端演示
+**核心接口**：
+- `Gateway`：网关接口
+- `GatewayFilter`：过滤器接口
+- `GatewayFilterChain`：过滤器链接口
+
+**实现类**：
+- `DefaultGateway`：默认网关实现
+- `LoggingFilter`：日志过滤器
+- `RateLimitFilter`：限流过滤器
+
+### ✅ 示例应用层（100%）
+
+#### demo-app（已完成）
+- **user-service**：用户服务示例
+  - 用户CRUD操作
+  - 用户数据存储
+  - 用户查询接口
+
+- **order-service**：订单服务示例
+  - 订单CRUD操作
+  - 订单数据存储
+  - 订单查询接口
+  - 集成熔断器
+
+- **goods-service**：商品服务示例
+  - 商品CRUD操作
+  - 商品数据存储
+  - 商品查询接口
+  - 库存管理
+
+**技术特点**：
+- 完整的微服务架构
+- 模块化设计
+- 依赖注入
+- 注解驱动
+- 数据隔离
 
 ### ⏳ 测试与优化（部分完成）
 

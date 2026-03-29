@@ -201,7 +201,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             return method;
         }
 
-        public HttpMethod getMethod() {
+        public HttpMethod getHttpMethod() {
             return httpMethod;
         }
     }

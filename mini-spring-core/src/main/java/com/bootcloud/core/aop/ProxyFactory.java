@@ -27,6 +27,10 @@ public class ProxyFactory {
         advices.add(advice);
     }
 
+    public List<Advice> getAdvices() {
+        return new ArrayList<>(advices);
+    }
+
     public Object getProxy() {
         Class<?> targetClass = target.getClass();
 

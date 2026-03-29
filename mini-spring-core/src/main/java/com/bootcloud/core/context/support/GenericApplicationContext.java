@@ -1,5 +1,6 @@
 package com.bootcloud.core.context.support;
 
+import com.bootcloud.core.bean.BeanDefinition;
 import com.bootcloud.core.context.ApplicationContext;
 import com.bootcloud.core.context.annotation.ClassPathBeanDefinitionScanner;
 import com.bootcloud.core.event.ApplicationEvent;
@@ -119,6 +120,11 @@ public class GenericApplicationContext implements ApplicationContext {
     @Override
     public com.bootcloud.core.bean.BeanDefinition getBeanDefinition(String name) {
         return beanFactory.getBeanDefinition(name);
+    }
+
+    @Override
+    public Map<String, com.bootcloud.core.bean.BeanDefinition> getBeanDefinitionMap() {
+        return beanFactory.getBeanDefinitionMap();
     }
 
     public DefaultListableBeanFactory getBeanFactory() {

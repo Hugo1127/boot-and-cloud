@@ -2,6 +2,8 @@ package com.bootcloud.core.factory;
 
 import com.bootcloud.core.bean.BeanDefinition;
 
+import java.util.Map;
+
 public interface BeanFactory {
     Object getBean(String name);
 
@@ -14,4 +16,6 @@ public interface BeanFactory {
     boolean isSingleton(String name);
 
     BeanDefinition getBeanDefinition(String name);
+
+    Map<String, BeanDefinition> getBeanDefinitionMap();
 }

@@ -62,6 +62,11 @@ public class DefaultListableBeanFactory implements BeanFactory {
         return beanDefinitionMap.get(name);
     }
 
+    @Override
+    public Map<String, BeanDefinition> getBeanDefinitionMap() {
+        return new ConcurrentHashMap<>(beanDefinitionMap);
+    }
+
     public void registerBeanDefinition(String name, BeanDefinition beanDefinition) {
         beanDefinitionMap.put(name, beanDefinition);
         logger.debug("Registered bean definition: {} -> {}", name, beanDefinition.getBeanClass().getName());
@@ -119,15 +124,16 @@ public class DefaultListableBeanFactory implements BeanFactory {
     }
 
     private Object createBean(String name, BeanDefinition beanDefinition) {
+        final String beanName = name;
         try {
-            Object bean = doCreateBean(name, beanDefinition);
+            Object bean = doCreateBean(beanName, beanDefinition);
 
             for (Method method : beanDefinition.getPreDestroyMethods()) {
                 method.setAccessible(true);
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     try {
                         method.invoke(bean);
-                        logger.debug("Executed @PreDestroy method: {} on bean: {}", method.getName(), name);
+                        logger.debug("Executed @PreDestroy method: {} on bean: {}", method.getName(), beanName);
                     } catch (Exception e) {
                         logger.error("Failed to execute @PreDestroy method", e);
                     }
@@ -148,9 +154,13 @@ public class DefaultListableBeanFactory implements BeanFactory {
             beanDefinition.setInstance(instance);
         }
 
+        final String beanName = name;
+        final BeanDefinition beanDef = beanDefinition;
+        final Object beanInstance = instance;
+        
         if (beanDefinition.isSingleton()) {
             if (singletonsCurrentlyInCreation.containsKey(name)) {
-                singletonFactories.put(name, () -> getEarlyBeanReference(name, beanDefinition, instance));
+                singletonFactories.put(beanName, () -> getEarlyBeanReference(beanName, beanDef, beanInstance));
             }
         }
 

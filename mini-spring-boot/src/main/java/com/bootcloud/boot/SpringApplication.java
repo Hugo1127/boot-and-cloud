@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 public class SpringApplication {
     private static final Logger logger = LoggerFactory.getLogger(SpringApplication.class);
 
+    private static BootApplicationContext applicationContext;
+
     private final Class<?> primarySource;
     private final BootApplicationContext context;
 
@@ -18,7 +20,13 @@ public class SpringApplication {
     }
 
     public static SpringApplication run(Class<?> primarySource, String... args) {
-        return new SpringApplication(primarySource).run(args);
+        SpringApplication app = new SpringApplication(primarySource);
+        app.run(args);
+        return app;
+    }
+
+    public static ApplicationContext getApplicationContext() {
+        return applicationContext;
     }
 
     public ApplicationContext run(String... args) {
@@ -31,6 +39,8 @@ public class SpringApplication {
             context.loadAutoConfiguration();
             
             context.refresh();
+            
+            applicationContext = context;
 
             logger.info("Boot&Cloud application started successfully");
             logger.info("Application context ID: {}", context.getId());

@@ -9,7 +9,7 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>Boot&Cloud Parent</name>
+    <name>Boot&amp;Cloud Parent</name>
     <description>手写极简Java微服务框架，深度复刻Spring Boot + Spring Cloud核心能力</description>
 
     <properties>
