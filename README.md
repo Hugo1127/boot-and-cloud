@@ -25,7 +25,6 @@ Boot&Cloud/
 ├── concurrent-optimizer/      # 多线程与锁优化
 ├── demo-app/                 # 示例微服务应用
 ├── ARCHITECTURE.md           # 架构设计文档
-├── INTERVIEW_QUESTIONS.md    # 面试问答清单
 └── pom.xml                   # Maven构建配置
 ```
 
@@ -40,13 +39,39 @@ Boot&Cloud/
 
 ## 快速开始
 
-### 环境要求
+### 环境准备
 
-- JDK 17+
-- Maven 3.6+
-- IDE：IntelliJ IDEA（推荐）
+#### 必需软件
 
-### 构建项目
+| 软件 | 版本要求 | 下载地址 |
+|------|---------|---------|
+| JDK | 17+ | https://www.oracle.com/java/technologies/downloads/ |
+| Maven | 3.6+ | https://maven.apache.org/download.cgi |
+| IDE | IntelliJ IDEA（推荐） | https://www.jetbrains.com/idea/ |
+
+#### 环境变量配置
+
+```bash
+# 设置JAVA_HOME
+export JAVA_HOME=/path/to/jdk-17
+export PATH=$JAVA_HOME/bin:$PATH
+
+# 设置MAVEN_HOME
+export MAVEN_HOME=/path/to/maven
+export PATH=$MAVEN_HOME/bin:$PATH
+
+# 验证安装
+java -version
+mvn -version
+```
+
+#### IDE配置
+
+1. 导入Maven项目：File → Open → 选择pom.xml
+2. 配置Maven：File → Settings → Build, Execution, Deployment → Build Tools → Maven
+3. 配置JDK：File → Project Structure → Project → SDK选择JDK 17
+
+### 项目构建
 
 ```bash
 # 克隆项目
@@ -56,33 +81,132 @@ cd Boot&Cloud
 # 构建所有模块
 mvn clean install
 
-# 运行单元测试
+# 跳过测试构建
+mvn clean install -DskipTests
+
+# 编译单个模块
+cd mini-spring-core
+mvn clean install
+```
+
+### 运行测试
+
+```bash
+# 运行所有测试
 mvn test
+
+# 运行特定测试类
+mvn test -Dtest=IoCTest
+
+# 运行特定测试方法
+mvn test -Dtest=IoCTest#testBeanRegistration
+
+# 运行测试并生成覆盖率报告
+mvn clean test jacoco:report
+
+# 查看报告
+open target/site/jacoco/index.html
 ```
 
 ### 运行示例
 
+#### 1. IOC容器示例
+**目标**：演示Bean的注册、依赖注入、生命周期管理
 ```bash
-# 运行IOC容器示例
 cd mini-spring-core
 mvn test -Dtest=IoCTest
+```
+**预期输出**：
+```
+INFO  - Registered bean: userRepository -> com.bootcloud.core.test.UserRepository
+INFO  - Registered bean: userService -> com.bootcloud.core.test.UserService
+INFO  - UserService initialized
+INFO  - OrderService initialized
+```
+**面试要点**：
+- Bean是如何扫描和注册的？
+- 依赖注入是如何实现的？
+- @PostConstruct和@PreDestroy何时执行？
 
-# 运行AOP示例
+#### 2. AOP代理示例
+**目标**：演示动态代理、切面、通知
+```bash
+cd mini-spring-core
 mvn test -Dtest=AopTest
+```
+**预期输出**：
+```
+INFO  - Found @Before advice: before in aspect: com.bootcloud.core.test.LogAspect
+INFO  - Found @After advice: after in aspect: com.bootcloud.core.test.LogAspect
+INFO  - Found @Around advice: around in aspect: com.bootcloud.core.test.LogAspect
+INFO  - Before advice: com.bootcloud.core.test.UserService.getUser
+INFO  - After advice: com.bootcloud.core.test.UserService.getUser
+```
+**面试要点**：
+- JDK代理和CGLIB代理的区别？
+- AOP底层原理是什么？
+- 通知的执行顺序？
 
-# 运行JVM监控示例
+#### 3. JVM监控示例
+**目标**：演示JVM信息获取、GC调优建议
+```bash
 cd jvm-optimizer
-mvn exec:java -Dexec.mainClass="com.bootcloud.jvm.JVMInfo"
+mvn test -Dtest=JVMInfoTest
+```
+**预期输出**：
+```
+=== JVM Memory Info ===
+{heap.used=12345678, heap.max=2147483648, heap.usagePercent=0.57}
 
-# 运行并发优化示例
+=== GC Info ===
+{gcName=G1 Young Generation, gcCollectionCount=10, gcCollectionTime=123}
+```
+**面试要点**：
+- JVM内存模型是怎样的？
+- G1GC的调优参数有哪些？
+- 如何排查OOM问题？
+
+#### 4. 并发优化示例
+**目标**：演示线程池、锁性能对比、死锁检测
+```bash
 cd concurrent-optimizer
-mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
+mvn test -Dtest=LockComparatorTest
+```
+**预期输出**：
+```
+=== Lock Performance Comparison ===
+Running 10000 iterations for each lock type
+
+Synchronized:      15ms
+ReentrantLock:      18ms
+ReadWriteLock:      22ms
+AtomicInteger:      12ms
+
+=== Lock Usage Recommendations ===
+...
+```
+**面试要点**：
+- synchronized锁的升级过程？
+- CAS的原理和缺点？
+- 如何避免死锁？
+
+#### 5. 完整Web应用示例
+**目标**：演示Spring Boot风格的Web应用
+```bash
+# 创建启动类（在demo-app中）
+# 运行启动类
+cd demo-app
+mvn exec:java -Dexec.mainClass="com.bootcloud.demo.Application"
+```
+**访问应用**：
+```
+http://localhost:8080/api/hello
+http://localhost:8080/api/user/1
 ```
 
 ## 核心功能
 
 ### 1. IOC容器（mini-spring-core）
-
 - 自定义注解：`@Component`, `@Service`, `@Repository`, `@Controller`
 - 依赖注入：`@Autowired`支持字段注入、构造器注入、Setter注入
 - Bean生命周期：`@PostConstruct`, `@PreDestroy`
@@ -94,7 +218,6 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - 依赖注入原理
 
 ### 2. AOP实现（mini-spring-core）
-
 - 动态代理：JDK动态代理 + CGLIB代理
 - 切面注解：`@Aspect`, `@Before`, `@After`, `@Around`, `@Pointcut`
 - 切点表达式：支持类和方法匹配
@@ -106,7 +229,6 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - 通知执行顺序
 
 ### 3. 自动配置（mini-spring-boot）
-
 - 条件注解：`@ConditionalOnClass`, `@ConditionalOnProperty`
 - 自动配置加载：`spring.factories`机制
 - 启动注解：`@SpringBootApplication`, `@EnableAutoConfiguration`
@@ -117,7 +239,6 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - 条件化配置
 
 ### 4. 嵌入式容器（mini-spring-boot）
-
 - Netty服务器：基于Netty的HTTP服务器
 - 请求映射：`@RequestMapping`, `@GetMapping`, `@PostMapping`
 - 控制器：`@RestController`
@@ -129,7 +250,6 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - Netty vs Tomcat
 
 ### 5. JVM调优（jvm-optimizer）
-
 - JVM信息获取：内存、线程、类、GC、运行时信息
 - 内存泄漏模拟：OOM场景模拟
 - GC调优：G1GC/ZGC调优建议
@@ -141,7 +261,6 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - OOM排查方法
 
 ### 6. 并发优化（concurrent-optimizer）
-
 - 智能线程池：支持动态调参、统计监控
 - 锁性能对比：synchronized、ReentrantLock、ReadWriteLock、CAS
 - 死锁检测：自动检测死锁、线程转储
@@ -153,36 +272,9 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 - CAS原理
 - 死锁避免
 
-## 面试准备
-
-### 高频考点总结
-
-本项目涵盖了Java后端面试的高频考点：
-
-1. **Spring生态**：IOC、AOP、自动配置、启动流程
-2. **微服务**：服务注册发现、负载均衡、熔断降级、RPC
-3. **JVM调优**：内存模型、GC算法、性能调优、OOM排查
-4. **并发编程**：线程池、锁优化、CAS、并发工具、死锁
-
-### 面试技巧
-
-1. **理论+实践**：结合项目代码讲解原理
-2. **问题导向**：针对面试官的问题，引用项目中的实现
-3. **对比分析**：对比不同方案，说明选型依据
-4. **性能数据**：提供调优前后的性能对比数据
-
-### 推荐学习顺序
-
-1. 先理解架构设计（阅读ARCHITECTURE.md）
-2. 逐个模块学习代码（mini-spring-core → mini-spring-boot → ...）
-3. 运行单元测试，验证功能
-4. 阅读面试问答（INTERVIEW_QUESTIONS.md）
-5. 结合代码，准备面试应答
-
 ## 性能优化
 
 ### JVM调优建议
-
 ```bash
 # G1GC调优参数
 -Xms2g -Xmx2g
@@ -196,10 +288,19 @@ mvn exec:java -Dexec.mainClass="com.bootcloud.concurrent.LockComparator"
 -XX:+UnlockExperimentalVMOptions
 -XX:+UseZGC
 -XX:ZCollectionInterval=5
+
+# G1GC推荐配置（完整启动参数）
+java -Xms2g -Xmx2g \
+     -XX:+UseG1GC \
+     -XX:MaxGCPauseMillis=200 \
+     -XX:G1HeapRegionSize=16m \
+     -XX:InitiatingHeapOccupancyPercent=45 \
+     -XX:+HeapDumpOnOutOfMemoryError \
+     -XX:HeapDumpPath=/tmp/heapdump.hprof \
+     -jar app.jar
 ```
 
 ### 线程池配置
-
 ```java
 // CPU密集型
 SmartThreadPool cpuPool = SmartThreadPool.createCpuIntensivePool("cpu-pool");
@@ -209,10 +310,63 @@ SmartThreadPool ioPool = SmartThreadPool.createIoIntensivePool("io-pool");
 
 // 动态调参
 pool.dynamicResize(newCoreSize, newMaxSize);
+
+// CPU密集型（计算密集）
+int coreSize = Runtime.getRuntime().availableProcessors() + 1;
+int maxSize = Runtime.getRuntime().availableProcessors() + 1;
+
+// IO密集型（网络、数据库）
+int coreSize = Runtime.getRuntime().availableProcessors() * 2;
+int maxSize = Runtime.getRuntime().availableProcessors() * 4;
+
+// 混合型
+int coreSize = Runtime.getRuntime().availableProcessors();
+int maxSize = Runtime.getRuntime().availableProcessors() * 2;
+```
+
+### 进阶使用示例
+#### 自定义Bean扫描
+```java
+@SpringBootApplication(scanBasePackages = {"com.example.service"})
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+```
+
+#### 自定义线程池
+```java
+SmartThreadPool pool = new SmartThreadPool(
+    8,                              // corePoolSize
+    16,                             // maximumPoolSize
+    60L, TimeUnit.SECONDS,            // keepAliveTime
+    new LinkedBlockingQueue<>(100),     // workQueue
+    "custom-pool"                    // poolName
+);
+
+// 动态调参
+pool.dynamicResize(10, 20);
+
+// 查看统计
+pool.printStatistics();
+```
+
+#### JVM性能监控
+```java
+JVMProfiler profiler = new JVMProfiler(5000); // 5秒间隔
+profiler.start();
+
+// 运行一段时间后
+Thread.sleep(30000);
+
+profiler.stop();
+
+// 获取GC调优建议
+GCTuner.printGCRecommendations();
 ```
 
 ## 项目特色
-
 1. **从零实现**：不依赖Spring框架，手写所有核心逻辑
 2. **面试导向**：每个模块都标注面试考点
 3. **代码可读**：核心代码添加详细注释
@@ -220,31 +374,17 @@ pool.dynamicResize(newCoreSize, newMaxSize);
 5. **性能优化**：提供JVM和并发调优方案
 
 ## 贡献指南
-
 欢迎贡献代码和建议：
-
 1. Fork本仓库
 2. 创建特性分支
 3. 提交代码
 4. 推送到分支
 5. 创建Pull Request
 
-## 文档
-
-- [架构设计文档](ARCHITECTURE.md)
-- [面试问答清单](INTERVIEW_QUESTIONS.md)
-- [各模块README](各模块目录下)
-
 ## 许可证
-
 MIT License
 
 ## 联系方式
-
 - 项目地址：[GitHub Repository]
-- 问题反馈：[Issue Tracker]
-- 技术交流：[Discussion Forum]
-
----
 
 **祝面试顺利，Offer多多！** 🚀
