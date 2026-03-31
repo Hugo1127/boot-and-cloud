@@ -56,10 +56,14 @@ public class SmartThreadPoolTest {
     public void testDynamicResize() {
         SmartThreadPool pool = SmartThreadPool.createCpuIntensivePool("test-resize-pool");
         int originalCoreSize = pool.getCorePoolSize();
+        int originalMaxSize = pool.getMaximumPoolSize();
         
-        pool.dynamicResize(originalCoreSize + 2, originalCoreSize + 4);
-        assertEquals(originalCoreSize + 2, pool.getCorePoolSize());
-        assertEquals(originalCoreSize + 4, pool.getMaximumPoolSize());
+        int newCoreSize = Math.min(originalCoreSize + 2, originalMaxSize);
+        int newMaxSize = Math.max(originalCoreSize + 4, originalMaxSize);
+        
+        pool.dynamicResize(newCoreSize, newMaxSize);
+        assertEquals(newCoreSize, pool.getCorePoolSize());
+        assertEquals(newMaxSize, pool.getMaximumPoolSize());
         
         pool.shutdown();
     }

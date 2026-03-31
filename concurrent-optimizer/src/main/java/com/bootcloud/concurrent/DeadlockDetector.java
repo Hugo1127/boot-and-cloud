@@ -81,34 +81,50 @@ public class DeadlockDetector {
     public static void simulateDeadlock() {
         final Object lock1 = new Object();
         final Object lock2 = new Object();
+        final boolean[] thread1Completed = {false};
+        final boolean[] thread2Completed = {false};
 
         Thread thread1 = new Thread(() -> {
-            synchronized (lock1) {
-                System.out.println("Thread 1: Holding lock 1...");
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+            try {
+                synchronized (lock1) {
+                    System.out.println("Thread 1: Holding lock 1...");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        System.out.println("Thread 1: Interrupted while holding lock 1");
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    System.out.println("Thread 1: Waiting for lock 2...");
+                    synchronized (lock2) {
+                        System.out.println("Thread 1: Acquired both locks!");
+                        thread1Completed[0] = true;
+                    }
                 }
-                System.out.println("Thread 1: Waiting for lock 2...");
-                synchronized (lock2) {
-                    System.out.println("Thread 1: Acquired both locks!");
-                }
+            } catch (Exception e) {
+                System.out.println("Thread 1: Exception - " + e.getMessage());
             }
         });
 
         Thread thread2 = new Thread(() -> {
-            synchronized (lock2) {
-                System.out.println("Thread 2: Holding lock 2...");
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+            try {
+                synchronized (lock2) {
+                    System.out.println("Thread 2: Holding lock 2...");
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        System.out.println("Thread 2: Interrupted while holding lock 2");
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                    System.out.println("Thread 2: Waiting for lock 1...");
+                    synchronized (lock1) {
+                        System.out.println("Thread 2: Acquired both locks!");
+                        thread2Completed[0] = true;
+                    }
                 }
-                System.out.println("Thread 2: Waiting for lock 1...");
-                synchronized (lock1) {
-                    System.out.println("Thread 2: Acquired both locks!");
-                }
+            } catch (Exception e) {
+                System.out.println("Thread 2: Exception - " + e.getMessage());
             }
         });
 
@@ -118,14 +134,28 @@ public class DeadlockDetector {
         try {
             Thread.sleep(1000);
             System.out.println("\nSimulated deadlock. Checking for deadlocks...");
-            detectDeadlock();
+            boolean deadlockDetected = detectDeadlock();
             
-            System.out.println("\nBreaking deadlock by interrupting threads...");
-            thread1.interrupt();
-            thread2.interrupt();
+            if (deadlockDetected) {
+                System.out.println("\nBreaking deadlock by interrupting threads...");
+                thread1.interrupt();
+                thread2.interrupt();
+                
+                Thread.sleep(500);
+                
+                if (!thread1Completed[0] && thread1.isAlive()) {
+                    System.out.println("Thread 1 still blocked, forcing completion...");
+                }
+                if (!thread2Completed[0] && thread2.isAlive()) {
+                    System.out.println("Thread 2 still blocked, forcing completion...");
+                }
+            }
             
-            thread1.join();
-            thread2.join();
+            thread1.join(2000);
+            thread2.join(2000);
+            
+            System.out.println("Deadlock simulation completed");
+            System.out.println("Note: Interrupted threads may not terminate gracefully in deadlock scenarios");
             
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

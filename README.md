@@ -1,8 +1,8 @@
-# Boot&Cloud - 手写极简Java微服务框架
+# Boot\&Cloud - 手写极简Java微服务框架
 
 ## 项目简介
 
-Boot&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring Boot + Spring Cloud核心能力，集成JVM调优、多线程与锁优化模块，全程以"面试备战"为核心，所有开发均围绕高频考点展开。
+Boot\&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring Boot + Spring Cloud核心能力，集成JVM调优、多线程与锁优化模块，全程以"面试备战"为核心，所有开发均围绕高频考点展开。
 
 ## 核心目标
 
@@ -43,11 +43,11 @@ Boot&Cloud/
 
 #### 必需软件
 
-| 软件 | 版本要求 | 下载地址 |
-|------|---------|---------|
-| JDK | 17+ | https://www.oracle.com/java/technologies/downloads/ |
-| Maven | 3.6+ | https://maven.apache.org/download.cgi |
-| IDE | IntelliJ IDEA（推荐） | https://www.jetbrains.com/idea/ |
+| 软件    | 版本要求              | 下载地址                                                  |
+| ----- | ----------------- | ----------------------------------------------------- |
+| JDK   | 17+               | <https://www.oracle.com/java/technologies/downloads/> |
+| Maven | 3.6+              | <https://maven.apache.org/download.cgi>               |
+| IDE   | IntelliJ IDEA（推荐） | <https://www.jetbrains.com/idea/>                     |
 
 #### 环境变量配置
 
@@ -111,30 +111,40 @@ open target/site/jacoco/index.html
 ### 运行示例
 
 #### 1. IOC容器示例
+
 **目标**：演示Bean的注册、依赖注入、生命周期管理
+
 ```bash
 cd mini-spring-core
 mvn test -Dtest=IoCTest
 ```
+
 **预期输出**：
+
 ```
 INFO  - Registered bean: userRepository -> com.bootcloud.core.test.UserRepository
 INFO  - Registered bean: userService -> com.bootcloud.core.test.UserService
 INFO  - UserService initialized
 INFO  - OrderService initialized
 ```
+
 **面试要点**：
+
 - Bean是如何扫描和注册的？
 - 依赖注入是如何实现的？
 - @PostConstruct和@PreDestroy何时执行？
 
 #### 2. AOP代理示例
+
 **目标**：演示动态代理、切面、通知
+
 ```bash
 cd mini-spring-core
 mvn test -Dtest=AopTest
 ```
+
 **预期输出**：
+
 ```
 INFO  - Found @Before advice: before in aspect: com.bootcloud.core.test.LogAspect
 INFO  - Found @After advice: after in aspect: com.bootcloud.core.test.LogAspect
@@ -142,18 +152,24 @@ INFO  - Found @Around advice: around in aspect: com.bootcloud.core.test.LogAspec
 INFO  - Before advice: com.bootcloud.core.test.UserService.getUser
 INFO  - After advice: com.bootcloud.core.test.UserService.getUser
 ```
+
 **面试要点**：
+
 - JDK代理和CGLIB代理的区别？
 - AOP底层原理是什么？
 - 通知的执行顺序？
 
 #### 3. JVM监控示例
+
 **目标**：演示JVM信息获取、GC调优建议
+
 ```bash
 cd jvm-optimizer
 mvn test -Dtest=JVMInfoTest
 ```
+
 **预期输出**：
+
 ```
 === JVM Memory Info ===
 {heap.used=12345678, heap.max=2147483648, heap.usagePercent=0.57}
@@ -161,18 +177,24 @@ mvn test -Dtest=JVMInfoTest
 === GC Info ===
 {gcName=G1 Young Generation, gcCollectionCount=10, gcCollectionTime=123}
 ```
+
 **面试要点**：
+
 - JVM内存模型是怎样的？
 - G1GC的调优参数有哪些？
 - 如何排查OOM问题？
 
 #### 4. 并发优化示例
+
 **目标**：演示线程池、锁性能对比、死锁检测
+
 ```bash
 cd concurrent-optimizer
 mvn test -Dtest=LockComparatorTest
 ```
+
 **预期输出**：
+
 ```
 === Lock Performance Comparison ===
 Running 10000 iterations for each lock type
@@ -185,20 +207,26 @@ AtomicInteger:      12ms
 === Lock Usage Recommendations ===
 ...
 ```
+
 **面试要点**：
+
 - synchronized锁的升级过程？
 - CAS的原理和缺点？
 - 如何避免死锁？
 
 #### 5. 完整Web应用示例
+
 **目标**：演示Spring Boot风格的Web应用
+
 ```bash
 # 创建启动类（在demo-app中）
 # 运行启动类
 cd demo-app
-mvn exec:java -Dexec.mainClass="com.bootcloud.demo.Application"
+mvn exec:java
 ```
+
 **访问应用**：
+
 ```
 http://localhost:8080/api/hello
 http://localhost:8080/api/user/1
@@ -207,66 +235,78 @@ http://localhost:8080/api/user/1
 ## 核心功能
 
 ### 1. IOC容器（mini-spring-core）
+
 - 自定义注解：`@Component`, `@Service`, `@Repository`, `@Controller`
 - 依赖注入：`@Autowired`支持字段注入、构造器注入、Setter注入
 - Bean生命周期：`@PostConstruct`, `@PreDestroy`
 - 循环依赖解决：三级缓存机制
 
 **面试考点**：
+
 - Bean生命周期流程
 - 循环依赖解决方案
 - 依赖注入原理
 
 ### 2. AOP实现（mini-spring-core）
+
 - 动态代理：JDK动态代理 + CGLIB代理
 - 切面注解：`@Aspect`, `@Before`, `@After`, `@Around`, `@Pointcut`
 - 切点表达式：支持类和方法匹配
 - 代理工厂：自动选择代理方式
 
 **面试考点**：
+
 - JDK代理 vs CGLIB代理
 - AOP底层原理
 - 通知执行顺序
 
 ### 3. 自动配置（mini-spring-boot）
+
 - 条件注解：`@ConditionalOnClass`, `@ConditionalOnProperty`
 - 自动配置加载：`spring.factories`机制
 - 启动注解：`@SpringBootApplication`, `@EnableAutoConfiguration`
 
 **面试考点**：
+
 - Spring Boot自动配置原理
 - Starter开发流程
 - 条件化配置
 
 ### 4. 嵌入式容器（mini-spring-boot）
+
 - Netty服务器：基于Netty的HTTP服务器
 - 请求映射：`@RequestMapping`, `@GetMapping`, `@PostMapping`
 - 控制器：`@RestController`
 - 参数绑定：`@RequestBody`, `@PathVariable`
 
 **面试考点**：
+
 - 嵌入式容器原理
 - HTTP请求处理流程
 - Netty vs Tomcat
 
 ### 5. JVM调优（jvm-optimizer）
+
 - JVM信息获取：内存、线程、类、GC、运行时信息
 - 内存泄漏模拟：OOM场景模拟
 - GC调优：G1GC/ZGC调优建议
 - 性能分析：GC统计、推荐参数
 
 **面试考点**：
+
 - JVM内存模型
 - GC算法原理
 - OOM排查方法
 
 ### 6. 并发优化（concurrent-optimizer）
+
 - 智能线程池：支持动态调参、统计监控
 - 锁性能对比：synchronized、ReentrantLock、ReadWriteLock、CAS
 - 死锁检测：自动检测死锁、线程转储
 - 并发工具：CountDownLatch、CyclicBarrier、Semaphore
 
 **面试考点**：
+
 - 线程池原理
 - 锁优化机制
 - CAS原理
@@ -275,6 +315,7 @@ http://localhost:8080/api/user/1
 ## 性能优化
 
 ### JVM调优建议
+
 ```bash
 # G1GC调优参数
 -Xms2g -Xmx2g
@@ -301,6 +342,7 @@ java -Xms2g -Xmx2g \
 ```
 
 ### 线程池配置
+
 ```java
 // CPU密集型
 SmartThreadPool cpuPool = SmartThreadPool.createCpuIntensivePool("cpu-pool");
@@ -325,7 +367,9 @@ int maxSize = Runtime.getRuntime().availableProcessors() * 2;
 ```
 
 ### 进阶使用示例
+
 #### 自定义Bean扫描
+
 ```java
 @SpringBootApplication(scanBasePackages = {"com.example.service"})
 public class Application {
@@ -336,6 +380,7 @@ public class Application {
 ```
 
 #### 自定义线程池
+
 ```java
 SmartThreadPool pool = new SmartThreadPool(
     8,                              // corePoolSize
@@ -353,6 +398,7 @@ pool.printStatistics();
 ```
 
 #### JVM性能监控
+
 ```java
 JVMProfiler profiler = new JVMProfiler(5000); // 5秒间隔
 profiler.start();
@@ -371,6 +417,7 @@ GCTuner.printGCRecommendations();
 ### JVM 调优前后对比
 
 **测试环境**：
+
 - CPU: 8 核
 - 内存：4GB
 - JDK: 17
@@ -378,13 +425,14 @@ GCTuner.printGCRecommendations();
 
 **场景 1：G1GC 调优**
 
-| 指标 | 调优前 | 调优后 | 提升 |
-|------|--------|--------|------|
-| GC 停顿时间 | 450ms | 180ms | 60% ↓ |
-| 吞吐量 | 8500 QPS | 12000 QPS | 41% ↑ |
+| 指标         | 调优前        | 调优后         | 提升    |
+| ---------- | ---------- | ----------- | ----- |
+| GC 停顿时间    | 450ms      | 180ms       | 60% ↓ |
+| 吞吐量        | 8500 QPS   | 12000 QPS   | 41% ↑ |
 | Full GC 频率 | 每 5 分钟 1 次 | 每 30 分钟 1 次 | 83% ↓ |
 
 **调优参数**：
+
 ```bash
 # 调优前（默认参数）
 -Xms512m -Xmx512m
@@ -399,23 +447,24 @@ GCTuner.printGCRecommendations();
 
 **场景 2：ZGC 调优（JDK 17）**
 
-| 指标 | G1GC | ZGC | 提升 |
-|------|------|-----|------|
-| GC 停顿时间 | 180ms | 8ms | 95% ↓ |
-| 吞吐量 | 12000 QPS | 11500 QPS | 4% ↓ |
-| 适用场景 | 通用 | 低延迟 | - |
+| 指标      | G1GC      | ZGC       | 提升    |
+| ------- | --------- | --------- | ----- |
+| GC 停顿时间 | 180ms     | 8ms       | 95% ↓ |
+| 吞吐量     | 12000 QPS | 11500 QPS | 4% ↓  |
+| 适用场景    | 通用        | 低延迟       | -     |
 
 ### 线程池性能对比
 
 **测试场景**：10000 个并发任务
 
-| 线程池类型 | 执行时间 | 吞吐量 | CPU 使用率 |
-|-----------|---------|--------|-----------|
-| FixedThreadPool | 2500ms | 4000 QPS | 85% |
-| CachedThreadPool | 2200ms | 4545 QPS | 92% |
+| 线程池类型               | 执行时间       | 吞吐量          | CPU 使用率 |
+| ------------------- | ---------- | ------------ | ------- |
+| FixedThreadPool     | 2500ms     | 4000 QPS     | 85%     |
+| CachedThreadPool    | 2200ms     | 4545 QPS     | 92%     |
 | **SmartThreadPool** | **1800ms** | **5555 QPS** | **78%** |
 
 **SmartThreadPool 优势**：
+
 - 动态调参，适应不同负载
 - 统计监控，实时了解状态
 - 拒绝策略优化，避免任务丢失
@@ -424,20 +473,22 @@ GCTuner.printGCRecommendations();
 
 **测试场景**：100000 次原子操作
 
-| 锁类型 | 执行时间 | 吞吐量 | 适用场景 |
-|--------|---------|--------|---------|
-| synchronized | 25ms | 400 万 QPS | 低竞争 |
-| ReentrantLock | 28ms | 357 万 QPS | 高竞争 |
-| ReadWriteLock | 35ms | 285 万 QPS | 读多写少 |
+| 锁类型               | 执行时间     | 吞吐量           | 适用场景 |
+| ----------------- | -------- | ------------- | ---- |
+| synchronized      | 25ms     | 400 万 QPS     | 低竞争  |
+| ReentrantLock     | 28ms     | 357 万 QPS     | 高竞争  |
+| ReadWriteLock     | 35ms     | 285 万 QPS     | 读多写少 |
 | **AtomicInteger** | **18ms** | **555 万 QPS** | 原子操作 |
 
 **结论**：
+
 - 无锁编程性能最优（CAS）
 - synchronized 在低竞争下性能优异
 - ReentrantLock 适合复杂锁场景
 - ReadWriteLock 适合读多写少
 
 ## 项目特色
+
 1. **从零实现**：不依赖 Spring 框架，手写所有核心逻辑
 2. **面试导向**：每个模块都标注面试考点
 3. **代码可读**：核心代码添加详细注释
@@ -446,7 +497,9 @@ GCTuner.printGCRecommendations();
 6. **数据支撑**：提供详实的压测数据
 
 ## 贡献指南
+
 欢迎贡献代码和建议：
+
 1. Fork本仓库
 2. 创建特性分支
 3. 提交代码
@@ -454,9 +507,11 @@ GCTuner.printGCRecommendations();
 5. 创建Pull Request
 
 ## 许可证
+
 MIT License
 
 ## 联系方式
-- 项目地址：[GitHub Repository]
+
+- 项目地址：\[GitHub Repository]
 
 **祝面试顺利，Offer多多！** 🚀

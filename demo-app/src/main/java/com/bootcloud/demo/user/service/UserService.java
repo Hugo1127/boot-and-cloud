@@ -1,5 +1,6 @@
 package com.bootcloud.demo.user.service;
 
+import com.bootcloud.core.annotation.Autowired;
 import com.bootcloud.core.annotation.Service;
 import com.bootcloud.demo.user.model.User;
 import com.bootcloud.demo.user.repository.UserRepository;
@@ -8,6 +9,7 @@ import com.bootcloud.demo.user.repository.UserRepository;
 public class UserService {
     private final UserRepository userRepository;
 
+    @Autowired
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
