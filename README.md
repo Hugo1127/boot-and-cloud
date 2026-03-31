@@ -4,28 +4,25 @@
 
 Boot\&Cloud是一个从零手写的极简Java微服务框架，深度复刻Spring Boot + Spring Cloud核心能力，集成JVM调优、多线程与锁优化模块，全程以"面试备战"为核心，所有开发均围绕高频考点展开。
 
-## 核心目标
-
-- **代码落地**：从零实现核心功能，手写所有关键逻辑
-- **原理吃透**：深度理解底层实现机制（反射、动态代理、类加载等）
-- **面试应答**：每个模块绑定面试考点，提供标准问答
+注：项目核心逻辑由**大模型**辅助生成，配套完整提示词
 
 ## 项目结构
 
 ```
 Boot&Cloud/
-├── mini-spring-core/          # IOC、AOP核心实现
-├── mini-spring-boot/          # 自动配置、嵌入式容器
-├── mini-spring-cloud-registry/ # 服务注册与发现
-├── mini-spring-cloud-feign/   # 远程服务调用
-├── mini-spring-cloud-loadbalancer/ # 客户端负载均衡
-├── mini-spring-cloud-circuitbreaker/ # 服务熔断与降级
-├── mini-spring-gateway/       # API网关
-├── jvm-optimizer/            # JVM调优与监控
-├── concurrent-optimizer/      # 多线程与锁优化
-├── demo-app/                 # 示例微服务应用
-├── ARCHITECTURE.md           # 架构设计文档
-└── pom.xml                   # Maven构建配置
+├── mini-spring-core/          # 核心容器：IOC 容器、AOP 实现、Bean 生命周期管理
+├── mini-spring-boot/          # 启动框架：自动配置、嵌入式 Web 容器、starter 机制
+├── mini-spring-cloud-registry/ # 微服务基础：服务注册、服务发现、心跳检测
+├── mini-spring-cloud-feign/   # 远程调用：声明式 HTTP 客户端、接口代理调用
+├── mini-spring-cloud-loadbalancer/ # 负载均衡：轮询/随机等负载策略实现
+├── mini-spring-cloud-circuitbreaker/ # 服务容错：熔断、降级、限流
+├── mini-spring-gateway/       # API 网关：请求路由、过滤、转发
+├── jvm-optimizer/            # JVM 调优：内存模型、GC 调优、堆外内存、监控工具
+├── concurrent-optimizer/      # 并发优化：线程池、锁优化、ThreadLocal、并发容器
+├── demo-app/                 # 实战演示：微服务调用、容错、网关完整示例
+├── ARCHITECTURE.md           # 完整架构设计文档
+├── agent.md                  # 大模型开发提示词
+└── pom.xml                   # Maven 统一依赖管理
 ```
 
 ## 技术栈
@@ -35,48 +32,16 @@ Boot&Cloud/
 - **序列化**: Jackson, Protobuf
 - **测试框架**: JUnit 5
 - **日志框架**: SLF4J + Logback
-- **构建工具**: Maven
+- **构建工具**: Maven 3.6+
 
 ## 快速开始
-
-### 环境准备
-
-#### 必需软件
-
-| 软件    | 版本要求              | 下载地址                                                  |
-| ----- | ----------------- | ----------------------------------------------------- |
-| JDK   | 17+               | <https://www.oracle.com/java/technologies/downloads/> |
-| Maven | 3.6+              | <https://maven.apache.org/download.cgi>               |
-| IDE   | IntelliJ IDEA（推荐） | <https://www.jetbrains.com/idea/>                     |
-
-#### 环境变量配置
-
-```bash
-# 设置JAVA_HOME
-export JAVA_HOME=/path/to/jdk-17
-export PATH=$JAVA_HOME/bin:$PATH
-
-# 设置MAVEN_HOME
-export MAVEN_HOME=/path/to/maven
-export PATH=$MAVEN_HOME/bin:$PATH
-
-# 验证安装
-java -version
-mvn -version
-```
-
-#### IDE配置
-
-1. 导入Maven项目：File → Open → 选择pom.xml
-2. 配置Maven：File → Settings → Build, Execution, Deployment → Build Tools → Maven
-3. 配置JDK：File → Project Structure → Project → SDK选择JDK 17
 
 ### 项目构建
 
 ```bash
 # 克隆项目
 git clone <repository-url>
-cd Boot&Cloud
+cd Boot-and-Cloud
 
 # 构建所有模块
 mvn clean install
@@ -412,81 +377,6 @@ profiler.stop();
 GCTuner.printGCRecommendations();
 ```
 
-## 性能测试数据
-
-### JVM 调优前后对比
-
-**测试环境**：
-
-- CPU: 8 核
-- 内存：4GB
-- JDK: 17
-- 测试工具：JMH
-
-**场景 1：G1GC 调优**
-
-| 指标         | 调优前        | 调优后         | 提升    |
-| ---------- | ---------- | ----------- | ----- |
-| GC 停顿时间    | 450ms      | 180ms       | 60% ↓ |
-| 吞吐量        | 8500 QPS   | 12000 QPS   | 41% ↑ |
-| Full GC 频率 | 每 5 分钟 1 次 | 每 30 分钟 1 次 | 83% ↓ |
-
-**调优参数**：
-
-```bash
-# 调优前（默认参数）
--Xms512m -Xmx512m
-
-# 调优后
--Xms2g -Xmx2g
--XX:+UseG1GC
--XX:MaxGCPauseMillis=200
--XX:G1HeapRegionSize=16m
--XX:InitiatingHeapOccupancyPercent=45
-```
-
-**场景 2：ZGC 调优（JDK 17）**
-
-| 指标      | G1GC      | ZGC       | 提升    |
-| ------- | --------- | --------- | ----- |
-| GC 停顿时间 | 180ms     | 8ms       | 95% ↓ |
-| 吞吐量     | 12000 QPS | 11500 QPS | 4% ↓  |
-| 适用场景    | 通用        | 低延迟       | -     |
-
-### 线程池性能对比
-
-**测试场景**：10000 个并发任务
-
-| 线程池类型               | 执行时间       | 吞吐量          | CPU 使用率 |
-| ------------------- | ---------- | ------------ | ------- |
-| FixedThreadPool     | 2500ms     | 4000 QPS     | 85%     |
-| CachedThreadPool    | 2200ms     | 4545 QPS     | 92%     |
-| **SmartThreadPool** | **1800ms** | **5555 QPS** | **78%** |
-
-**SmartThreadPool 优势**：
-
-- 动态调参，适应不同负载
-- 统计监控，实时了解状态
-- 拒绝策略优化，避免任务丢失
-
-### 锁性能对比
-
-**测试场景**：100000 次原子操作
-
-| 锁类型               | 执行时间     | 吞吐量           | 适用场景 |
-| ----------------- | -------- | ------------- | ---- |
-| synchronized      | 25ms     | 400 万 QPS     | 低竞争  |
-| ReentrantLock     | 28ms     | 357 万 QPS     | 高竞争  |
-| ReadWriteLock     | 35ms     | 285 万 QPS     | 读多写少 |
-| **AtomicInteger** | **18ms** | **555 万 QPS** | 原子操作 |
-
-**结论**：
-
-- 无锁编程性能最优（CAS）
-- synchronized 在低竞争下性能优异
-- ReentrantLock 适合复杂锁场景
-- ReadWriteLock 适合读多写少
-
 ## 项目特色
 
 1. **从零实现**：不依赖 Spring 框架，手写所有核心逻辑
@@ -512,6 +402,6 @@ MIT License
 
 ## 联系方式
 
-- 项目地址：\[GitHub Repository]
+- 项目地址: (<https://gitee.com/hugo9986/boot-and-cloud>)
 
 **祝面试顺利，Offer多多！** 🚀

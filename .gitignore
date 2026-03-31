@@ -55,3 +55,6 @@ Thumbs.db
 # 测试/覆盖率
 *.hprof
 jacoco.exec/
+
+TODO.md
+PROJECT_REVIEW_AND_TODO.md
