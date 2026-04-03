@@ -24,6 +24,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.bootcloud</groupId>
+            <artifactId>mini-spring-cloud-loadbalancer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>

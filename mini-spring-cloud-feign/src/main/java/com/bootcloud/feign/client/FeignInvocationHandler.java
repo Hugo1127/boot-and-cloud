@@ -8,6 +8,10 @@ import com.bootcloud.feign.codec.Encoder;
 import com.bootcloud.feign.codec.Decoder;
 import com.bootcloud.feign.codec.JsonEncoder;
 import com.bootcloud.feign.codec.JsonDecoder;
+import com.bootcloud.loadbalancer.core.LoadBalancer;
+import com.bootcloud.loadbalancer.factory.LoadBalancerFactory;
+import com.bootcloud.registry.core.ServiceDiscovery;
+import com.bootcloud.registry.model.ServiceInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,15 +23,21 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Feign 调用处理器
  * 拦截接口方法调用，转换为 HTTP 请求
+ * 集成服务发现与负载均衡能力
  * 
  * 面试考点：
  * 1. 动态代理的核心原理？
  *    答：通过 InvocationHandler 拦截方法调用，在运行时增强或转换行为
+ * 2. Feign 如何与服务注册中心集成？
+ *    答：通过 ServiceDiscovery 获取服务实例列表，结合 LoadBalancer 选择实例
+ * 3. 服务名如何解析为实际地址？
+ *    答：从 ServiceDiscovery 缓存中获取服务实例，拼接 host:port 生成 URL
  */
 public class FeignInvocationHandler implements InvocationHandler {
     private static final Logger logger = LoggerFactory.getLogger(FeignInvocationHandler.class);
@@ -36,23 +46,39 @@ public class FeignInvocationHandler implements InvocationHandler {
     private final HttpClient httpClient;
     private final Encoder encoder;
     private final Decoder decoder;
-    private final String baseUrl;
+    private final ServiceDiscovery serviceDiscovery;
+    private final LoadBalancer loadBalancer;
+    private final String fixedUrl;
+    private final boolean useServiceDiscovery;
     
-    public FeignInvocationHandler(FeignClient feignClient) {
+    public FeignInvocationHandler(FeignClient feignClient, ServiceDiscovery serviceDiscovery) {
         this.feignClient = feignClient;
         this.httpClient = HttpClient.newHttpClient();
         this.encoder = new JsonEncoder();
         this.decoder = new JsonDecoder();
+        this.serviceDiscovery = serviceDiscovery;
+        this.loadBalancer = LoadBalancerFactory.createLoadBalancer("roundRobin");
         
         // 确定基础 URL
         if (!feignClient.url().isEmpty()) {
-            this.baseUrl = feignClient.url();
+            this.fixedUrl = feignClient.url();
+            this.useServiceDiscovery = false;
+            logger.info("Feign client '{}' configured with fixed URL: {}", feignClient.name(), fixedUrl);
+        } else if (!feignClient.name().isEmpty()) {
+            this.fixedUrl = null;
+            this.useServiceDiscovery = true;
+            logger.info("Feign client '{}' configured with service discovery for service: {}", 
+                       feignClient.name(), feignClient.name());
         } else {
-            // TODO: 从服务注册中心获取服务地址
-            this.baseUrl = "http://localhost:8080";
-            logger.warn("Service name '{}' specified but service discovery not implemented yet. Using default URL: {}", 
-                       feignClient.name(), this.baseUrl);
+            throw new IllegalArgumentException("FeignClient must specify either 'name' or 'url'");
         }
+    }
+    
+    /**
+     * 兼容旧版本构造函数（不使用服务发现）
+     */
+    public FeignInvocationHandler(FeignClient feignClient) {
+        this(feignClient, null);
     }
     
     @Override
@@ -76,8 +102,8 @@ public class FeignInvocationHandler implements InvocationHandler {
         Map<String, String> pathVariables = extractPathVariables(method, args);
         path = replacePathVariables(path, pathVariables);
         
-        // 构建完整 URL
-        String url = baseUrl + path;
+        // 构建完整 URL（使用服务发现或固定 URL）
+        String url = buildUrl(path);
         
         // 获取请求体
         Object requestBody = extractRequestBody(method, args);
@@ -128,6 +154,80 @@ public class FeignInvocationHandler implements InvocationHandler {
         } else {
             throw new RuntimeException("HTTP request failed with status: " + response.statusCode());
         }
+    }
+    
+    /**
+     * 构建完整的请求 URL
+     * 支持服务发现和固定 URL 两种模式
+     * 
+     * 面试考点：
+     * 1. 服务名如何转换为实际 URL？
+     *    答：从 ServiceDiscovery 获取服务实例，拼接 http://host:port + path
+     * 2. 负载均衡在何时生效？
+     *    答：在 chooseInstance() 时，通过 LoadBalancer 从多个实例中选择一个
+     */
+    private String buildUrl(String path) {
+        if (useServiceDiscovery) {
+            // 使用服务发现：从注册中心获取服务实例
+            String serviceName = feignClient.name();
+            ServiceInstance instance = chooseInstance(serviceName);
+            
+            if (instance == null) {
+                throw new RuntimeException("No available instance found for service: " + serviceName);
+            }
+            
+            String baseUrl = "http://" + instance.getHost() + ":" + instance.getPort();
+            String url = baseUrl + path;
+            
+            logger.debug("Service discovery resolved '{}' to instance {}:{}", 
+                        serviceName, instance.getHost(), instance.getPort());
+            
+            return url;
+        } else {
+            // 使用固定 URL
+            return fixedUrl + path;
+        }
+    }
+    
+    /**
+     * 选择服务实例（集成负载均衡）
+     * 
+     * 面试考点：
+     * 1. 负载均衡策略有哪些？
+     *    答：轮询、随机、权重、最少活跃数等
+     * 2. 本项目默认使用什么策略？
+     *    答：轮询策略（RoundRobin），保证请求均匀分布
+     */
+    private ServiceInstance chooseInstance(String serviceName) {
+        if (serviceDiscovery == null) {
+            logger.error("ServiceDiscovery is not configured!");
+            throw new RuntimeException("ServiceDiscovery not available for service: " + serviceName);
+        }
+        
+        // 从服务发现获取实例列表
+        List<ServiceInstance> instances = serviceDiscovery.getInstances(serviceName);
+        
+        if (instances == null || instances.isEmpty()) {
+            logger.error("No instances found for service: {}", serviceName);
+            return null;
+        }
+        
+        // 过滤健康实例
+        List<ServiceInstance> healthyInstances = instances.stream()
+                .filter(ServiceInstance::isHealthy)
+                .toList();
+        
+        if (healthyInstances.isEmpty()) {
+            logger.error("No healthy instances found for service: {}", serviceName);
+            return null;
+        }
+        
+        // 使用负载均衡器选择实例
+        ServiceInstance chosen = loadBalancer.choose(healthyInstances);
+        logger.debug("LoadBalancer chose instance {}:{} for service {}", 
+                    chosen.getHost(), chosen.getPort(), serviceName);
+        
+        return chosen;
     }
     
     /**
