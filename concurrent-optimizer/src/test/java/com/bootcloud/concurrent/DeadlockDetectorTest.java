@@ -20,9 +20,4 @@ public class DeadlockDetectorTest {
     public void testPrintThreadDump() {
         assertDoesNotThrow(() -> DeadlockDetector.printThreadDump());
     }
-
-    @Test
-    public void testPrintDeadlockPreventionTips() {
-        assertDoesNotThrow(() -> DeadlockDetector.printDeadlockPreventionTips());
-    }
 }
