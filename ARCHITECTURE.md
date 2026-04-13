@@ -1,14 +1,14 @@
-# Boot&Cloud 架构设计文档
+# Boot\&Cloud 架构设计文档
 
-> 本文档详细描述 Boot&Cloud 手写极简 Java 微服务框架的整体架构设计、模块依赖关系、核心流程，以及面试考点映射。
+> 本文档详细描述 Boot\&Cloud 手写极简 Java 微服务框架的整体架构设计、模块依赖关系、核心流程，以及面试考点映射。
 
----
+***
 
 ## 一、架构总览
 
 ### 1.1 架构分层
 
-Boot&Cloud 采用四层架构设计，自底向上分别为：
+Boot\&Cloud 采用四层架构设计，自底向上分别为：
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -104,20 +104,20 @@ graph TD
 
 ### 1.3 模块职责说明
 
-| 模块名称 | 职责 | 核心类 | 面试考点 |
-|---------|------|--------|---------|
-| **mini-spring-core** | IOC 容器、AOP 核心实现 | BeanFactory, ApplicationContext, ProxyFactory | Bean 生命周期、循环依赖、动态代理 |
-| **mini-spring-boot** | 自动配置、嵌入式容器 | SpringApplication, NettyWebServer | 自动配置原理、嵌入式容器 |
-| **mini-spring-cloud-registry** | 服务注册与发现 | ServiceRegistry, ServiceDiscovery | 注册中心原理、心跳机制 |
-| **mini-spring-cloud-feign** | 远程服务调用 | FeignClientFactory, FeignInvocationHandler | 声明式 RPC、序列化协议 |
-| **mini-spring-cloud-loadbalancer** | 客户端负载均衡 | LoadBalancer, LoadBalancerFactory | 负载均衡算法 |
-| **mini-spring-cloud-circuitbreaker** | 服务熔断降级 | CircuitBreaker, CircuitBreakerFactory | 熔断器状态机、降级策略 |
-| **mini-spring-gateway** | API 网关 | Gateway, GatewayFilter | 网关设计、路由转发 |
-| **jvm-optimizer** | JVM 调优监控 | JVMProfiler, GCTuner | JVM 内存模型、GC 算法 |
-| **concurrent-optimizer** | 多线程锁优化 | SmartThreadPool, LockComparator | 线程池、锁升级、CAS |
-| **demo-app** | 示例微服务应用 | UserController, OrderService | 端到端流程演示 |
+| 模块名称                                 | 职责              | 核心类                                           | 面试考点                |
+| ------------------------------------ | --------------- | --------------------------------------------- | ------------------- |
+| **mini-spring-core**                 | IOC 容器、AOP 核心实现 | BeanFactory, ApplicationContext, ProxyFactory | Bean 生命周期、循环依赖、动态代理 |
+| **mini-spring-boot**                 | 自动配置、嵌入式容器      | SpringApplication, NettyWebServer             | 自动配置原理、嵌入式容器        |
+| **mini-spring-cloud-registry**       | 服务注册与发现         | ServiceRegistry, ServiceDiscovery             | 注册中心原理、心跳机制         |
+| **mini-spring-cloud-feign**          | 远程服务调用          | FeignClientFactory, FeignInvocationHandler    | 声明式 RPC、序列化协议       |
+| **mini-spring-cloud-loadbalancer**   | 客户端负载均衡         | LoadBalancer, LoadBalancerFactory             | 负载均衡算法              |
+| **mini-spring-cloud-circuitbreaker** | 服务熔断降级          | CircuitBreaker, CircuitBreakerFactory         | 熔断器状态机、降级策略         |
+| **mini-spring-gateway**              | API 网关          | Gateway, GatewayFilter                        | 网关设计、路由转发           |
+| **jvm-optimizer**                    | JVM 调优监控        | JVMProfiler, GCTuner                          | JVM 内存模型、GC 算法      |
+| **concurrent-optimizer**             | 多线程锁优化          | SmartThreadPool, LockComparator               | 线程池、锁升级、CAS         |
+| **demo-app**                         | 示例微服务应用         | UserController, OrderService                  | 端到端流程演示             |
 
----
+***
 
 ## 二、核心流程设计
 
@@ -146,6 +146,7 @@ sequenceDiagram
 ```
 
 **面试考点**：
+
 1. Bean 的生命周期流程（实例化→属性填充→初始化→销毁）
 2. 循环依赖如何解决（三级缓存机制）
 3. @Autowired 注入原理（反射 + 类型匹配）
@@ -182,6 +183,7 @@ sequenceDiagram
 ```
 
 **面试考点**：
+
 1. JDK 代理 vs CGLIB 代理的区别
 2. AOP 底层原理（动态代理 + 拦截器链）
 3. 通知的执行顺序（Around→Before→目标→After）
@@ -218,6 +220,7 @@ sequenceDiagram
 ```
 
 **面试考点**：
+
 1. 服务注册中心的原理（CAP 理论）
 2. 心跳机制与健康检查设计
 3. 客户端发现 vs 服务端发现
@@ -255,6 +258,7 @@ sequenceDiagram
 ```
 
 **面试考点**：
+
 1. Feign 的声明式调用原理（动态代理）
 2. 序列化协议选型（JSON vs Protobuf）
 3. HTTP vs RPC 的区别
@@ -292,6 +296,7 @@ stateDiagram-v2
 ```
 
 **面试考点**：
+
 1. 熔断器的三种状态及转换条件
 2. 快速失败（Fail Fast）原理
 3. 降级策略（Fallback）实现
@@ -322,12 +327,13 @@ graph LR
 ```
 
 **面试考点**：
+
 1. JVM 内存模型（堆、栈、元空间）
 2. GC 算法原理（标记清除、复制、标记整理）
 3. G1GC vs ZGC 的区别
 4. OOM 排查方法（jstat、jmap、MAT）
 
----
+***
 
 ## 三、核心数据结构
 
@@ -399,22 +405,25 @@ public enum CircuitBreakerState {
 }
 ```
 
----
+***
 
 ## 四、设计模式应用
 
 ### 4.1 工厂模式
+
 - **BeanFactory** - Bean 工厂
 - **LoadBalancerFactory** - 负载均衡器工厂
 - **CircuitBreakerFactory** - 熔断器工厂
 - **FeignClientFactory** - Feign 客户端工厂
 
 ### 4.2 代理模式
+
 - **JDK 动态代理** - 接口类代理
 - **CGLIB 代理** - 非接口类代理
 - **FeignInvocationHandler** - Feign 代理
 
 ### 4.3 策略模式
+
 - **LoadBalancer** - 负载均衡策略
   - RoundRobinLoadBalancer
   - RandomLoadBalancer
@@ -422,106 +431,92 @@ public enum CircuitBreakerState {
   - LeastActiveLoadBalancer
 
 ### 4.4 责任链模式
+
 - **GatewayFilterChain** - 网关过滤器链
 - **AOP 通知链** - 切面通知执行链
 
 ### 4.5 观察者模式
+
 - **ApplicationEvent** - 应用事件
 - **ApplicationListener** - 事件监听器
 
 ### 4.6 单例模式
+
 - **BeanFactory** - 单例 Bean
 - **ApplicationContext** - 应用上下文
 
----
+***
 
 ## 五、性能优化设计
 
 ### 5.1 缓存优化
 
-| 场景 | 缓存策略 | 实现方式 |
-|------|---------|---------|
-| Bean 管理 | 三级缓存 | singletonObjects, earlySingletonObjects, singletonFactories |
-| 服务发现 | 本地缓存 | 客户端缓存服务列表，定期刷新 |
-| 配置加载 | 懒加载 + 缓存 | 自动配置类懒加载，结果缓存 |
+| 场景      | 缓存策略     | 实现方式                                                        |
+| ------- | -------- | ----------------------------------------------------------- |
+| Bean 管理 | 三级缓存     | singletonObjects, earlySingletonObjects, singletonFactories |
+| 服务发现    | 本地缓存     | 客户端缓存服务列表，定期刷新                                              |
+| 配置加载    | 懒加载 + 缓存 | 自动配置类懒加载，结果缓存                                               |
 
 ### 5.2 并发优化
 
-| 组件 | 优化策略 | 性能提升 |
-|------|---------|---------|
-| SmartThreadPool | 动态调参、统计监控 | 吞吐量提升 30-50% |
-| LockComparator | 锁性能对比工具 | 选择最优锁策略 |
-| DeadlockDetector | 死锁自动检测 | 避免系统卡死 |
+| 组件               | 优化策略      | 性能提升         |
+| ---------------- | --------- | ------------ |
+| SmartThreadPool  | 动态调参、统计监控 | 吞吐量提升 30-50% |
+| LockComparator   | 锁性能对比工具   | 选择最优锁策略      |
+| DeadlockDetector | 死锁自动检测    | 避免系统卡死       |
 
 ### 5.3 JVM 调优
 
-| 场景 | 推荐参数 | 效果 |
-|------|---------|------|
+| 场景      | 推荐参数                     | 效果         |
+| ------- | ------------------------ | ---------- |
 | G1GC 调优 | -XX:MaxGCPauseMillis=200 | 停顿时间<200ms |
-| ZGC 调优 | -XX:+UseZGC | 停顿时间<10ms |
-| 堆大小优化 | -Xms2g -Xmx2g | 避免动态扩容开销 |
+| ZGC 调优  | -XX:+UseZGC              | 停顿时间<10ms  |
+| 堆大小优化   | -Xms2g -Xmx2g            | 避免动态扩容开销   |
 
----
+***
 
 ## 六、面试考点索引
 
 ### 6.1 IOC 容器考点
-1. [Bean 生命周期](#21-ioc 容器启动流程)
+
+1. \[Bean 生命周期]\(#21-ioc 容器启动流程)
 2. [循环依赖解决（三级缓存）](#32-三级缓存结构)
-3. [@Autowired 注入原理](#21-ioc 容器启动流程)
+3. \[@Autowired 注入原理]\(#21-ioc 容器启动流程)
 4. [BeanDefinition 作用](#31-beandefinition)
 
 ### 6.2 AOP 考点
-1. [JDK vs CGLIB 代理](#22-aop 代理创建流程)
-2. [AOP 底层原理](#22-aop 代理创建流程)
-3. [通知执行顺序](#22-aop 代理创建流程)
-4. [切点表达式解析](#22-aop 代理创建流程)
+
+1. \[JDK vs CGLIB 代理]\(#22-aop 代理创建流程)
+2. \[AOP 底层原理]\(#22-aop 代理创建流程)
+3. \[通知执行顺序]\(#22-aop 代理创建流程)
+4. \[切点表达式解析]\(#22-aop 代理创建流程)
 
 ### 6.3 微服务考点
+
 1. [服务注册发现原理](#23-服务注册与发现流程)
-2. [Feign 声明式调用](#24-feign 远程调用流程)
+2. \[Feign 声明式调用]\(#24-feign 远程调用流程)
 3. [负载均衡算法](#12-模块依赖关系图)
 4. [熔断器状态机](#25-熔断器状态机流程)
 
 ### 6.4 JVM 考点
-1. [JVM 内存模型](#26-jvm 调优流程)
-2. [GC 算法原理](#26-jvm 调优流程)
-3. [OOM 排查方法](#26-jvm 调优流程)
-4. [G1GC vs ZGC](#53-jvm 调优)
+
+1. \[JVM 内存模型]\(#26-jvm 调优流程)
+2. \[GC 算法原理]\(#26-jvm 调优流程)
+3. \[OOM 排查方法]\(#26-jvm 调优流程)
+4. \[G1GC vs ZGC]\(#53-jvm 调优)
 
 ### 6.5 并发编程考点
+
 1. [线程池原理](#52-并发优化)
 2. [锁升级过程](#52-并发优化)
 3. [CAS 原理](#52-并发优化)
 4. [死锁避免](#52-并发优化)
 
----
-
-## 七、架构演进建议
-
-### 7.1 短期优化（1-3 个月）
-1. 实现配置中心，支持配置动态刷新
-2. 添加链路追踪功能（类似 Sleuth）
-3. 完善服务健康检查机制
-4. 实现网关的限流、熔断功能
-
-### 7.2 中期优化（3-6 个月）
-1. 实现高可用注册中心（Raft 协议）
-2. 添加消息队列模块
-3. 实现安全认证与授权
-4. 完善监控告警系统
-
-### 7.3 长期优化（6-12 个月）
-1. 支持 Serverless 架构
-2. 实现服务网格（Service Mesh）
-3. 添加 AI 智能调优
-4. 云原生适配（K8s、Docker）
-
----
+***
 
 ## 八、总结
 
-Boot&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Spring Cloud 的核心功能。通过本项目，可以深入理解：
+Boot\&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Spring Cloud 的核心功能。通过本项目，可以深入理解：
 
 1. **IOC/AOP 底层原理** - 手写 Bean 工厂和动态代理
 2. **微服务架构设计** - 服务注册发现、远程调用、负载均衡、熔断降级
@@ -530,8 +525,8 @@ Boot&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Spring
 
 本项目不仅是一个框架实现，更是 Java 后端面试的"活字典"，所有核心考点都有代码落地和原理解析。
 
----
+***
 
-**文档版本**：v1.0  
-**最后更新**：2026-03-29  
-**作者**：Boot&Cloud 开发团队
+**文档版本**：v1.0\
+**最后更新**：2026-04-12\
+**作者**：Boot\&Cloud 开发团队

@@ -6,6 +6,7 @@ import com.bootcloud.core.annotation.Controller;
 import com.bootcloud.core.annotation.PostConstruct;
 import com.bootcloud.core.annotation.PreDestroy;
 import com.bootcloud.core.annotation.Repository;
+import com.bootcloud.core.annotation.Scope;
 import com.bootcloud.core.annotation.Service;
 import com.bootcloud.core.bean.BeanDefinition;
 import com.bootcloud.core.factory.DefaultListableBeanFactory;
@@ -120,9 +121,32 @@ public class ClassPathBeanDefinitionScanner {
     }
 
     private void parseBeanDefinition(Class<?> clazz, BeanDefinition beanDefinition) {
+        parseScope(clazz, beanDefinition);
         parseAutowiredFields(clazz, beanDefinition);
         parseConstructors(clazz, beanDefinition);
         parseLifecycleMethods(clazz, beanDefinition);
+    }
+
+    /**
+     * 解析@Scope 注解，设置 Bean 的作用域
+     * 支持 singleton（单例）和 prototype（原型）两种作用域
+     */
+    private void parseScope(Class<?> clazz, BeanDefinition beanDefinition) {
+        if (clazz.isAnnotationPresent(Scope.class)) {
+            Scope scope = clazz.getAnnotation(Scope.class);
+            String scopeValue = scope.value();
+            beanDefinition.setScope(scopeValue);
+            
+            // 根据作用域设置 singleton 标志
+            boolean isSingleton = Scope.SCOPE_SINGLETON.equals(scopeValue);
+            beanDefinition.setSingleton(isSingleton);
+            
+            logger.debug("Found @Scope annotation: {} in class: {}", scopeValue, clazz.getName());
+        } else {
+            // 默认作用域为 singleton
+            beanDefinition.setScope(Scope.SCOPE_SINGLETON);
+            beanDefinition.setSingleton(true);
+        }
     }
 
     private void parseAutowiredFields(Class<?> clazz, BeanDefinition beanDefinition) {
