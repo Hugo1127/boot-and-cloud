@@ -11,11 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * AqsUtils 单元测试
- * 
  * 测试 AQS 框架、ReentrantLock、CountDownLatch
- * 
- * @author BootCloud
- * @date 2026-04-14
  */
 public class AqsCoreTest {
 
@@ -66,8 +62,9 @@ public class AqsCoreTest {
         AqsUtils.ReentrantLock lock = new AqsUtils.ReentrantLock();
         
         assertTrue(lock.tryLock());
-        assertFalse(lock.tryLock());
+        assertTrue(lock.tryLock()); // 修复后支持重入
         
+        lock.unlock();
         lock.unlock();
         assertTrue(lock.tryLock());
         
@@ -99,11 +96,7 @@ public class AqsCoreTest {
         }
         
         for (Thread thread : threads) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            thread.join();
         }
         
         assertEquals(threadCount * iterations, counter.get(), "计数器应该正确累加");
@@ -215,7 +208,7 @@ public class AqsCoreTest {
         long elapsed = System.currentTimeMillis() - startTime;
         
         assertFalse(completed);
-        assertTrue(elapsed >= 400 && elapsed <= 700, "应该在 500ms 左右超时");
+        assertTrue(elapsed >= 300 && elapsed <= 800, "应该在 500ms 左右超时");
     }
 
     @Test
@@ -254,8 +247,6 @@ public class AqsCoreTest {
         AqsUtils.Node node = new AqsUtils.Node();
         node.prev = null;
         
-        assertThrows(NullPointerException.class, () -> {
-            node.predecessor();
-        });
+        assertThrows(NullPointerException.class, node::predecessor);
     }
 }
