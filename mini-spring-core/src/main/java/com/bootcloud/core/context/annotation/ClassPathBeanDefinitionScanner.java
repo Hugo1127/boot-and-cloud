@@ -123,6 +123,7 @@ public class ClassPathBeanDefinitionScanner {
     private void parseBeanDefinition(Class<?> clazz, BeanDefinition beanDefinition) {
         parseScope(clazz, beanDefinition);
         parseAutowiredFields(clazz, beanDefinition);
+        parseAutowiredMethods(clazz, beanDefinition);
         parseConstructors(clazz, beanDefinition);
         parseLifecycleMethods(clazz, beanDefinition);
     }
@@ -156,6 +157,22 @@ public class ClassPathBeanDefinitionScanner {
                 if (field.isAnnotationPresent(Autowired.class)) {
                     beanDefinition.getAutowiredFields().add(field);
                     logger.debug("Found @Autowired field: {} in class: {}", field.getName(), currentClass.getName());
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+    }
+
+    private void parseAutowiredMethods(Class<?> clazz, BeanDefinition beanDefinition) {
+        Class<?> currentClass = clazz;
+        while (currentClass != null && currentClass != Object.class) {
+            for (Method method : currentClass.getDeclaredMethods()) {
+                if (method.isAnnotationPresent(Autowired.class)) {
+                    // Setter 方法必须恰好有一个参数
+                    if (method.getParameterCount() == 1) {
+                        beanDefinition.getAutowiredMethods().add(method);
+                        logger.debug("Found @Autowired setter: {} in class: {}", method.getName(), currentClass.getName());
+                    }
                 }
             }
             currentClass = currentClass.getSuperclass();

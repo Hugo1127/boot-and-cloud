@@ -12,6 +12,7 @@ public class BeanDefinition {
     private Object instance;
     private Constructor<?> constructor;
     private List<Field> autowiredFields;
+    private List<Method> autowiredMethods;
     private List<Method> postConstructMethods;
     private List<Method> preDestroyMethods;
     private boolean singleton;
@@ -24,6 +25,7 @@ public class BeanDefinition {
         this.lazyInit = false;
         this.scope = "singleton";
         this.autowiredFields = new ArrayList<>();
+        this.autowiredMethods = new ArrayList<>();
         this.postConstructMethods = new ArrayList<>();
         this.preDestroyMethods = new ArrayList<>();
     }
@@ -58,6 +60,10 @@ public class BeanDefinition {
 
     public List<Field> getAutowiredFields() {
         return autowiredFields;
+    }
+
+    public List<Method> getAutowiredMethods() {
+        return autowiredMethods;
     }
 
     public List<Method> getPostConstructMethods() {

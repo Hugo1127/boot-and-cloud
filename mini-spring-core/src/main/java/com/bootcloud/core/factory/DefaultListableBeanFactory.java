@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -69,16 +71,49 @@ public class DefaultListableBeanFactory implements BeanFactory {
 
     /**
      * 根据Bean类型获取Bean实例
-     * 遍历所有Bean定义，找到匹配类型的Bean
+     * 解析策略：
+     * 1. 精确匹配（类型完全相同）优先
+     * 2. 找到多个 → 按名称回退匹配（byName）
+     * 3. 找不到 → 报错
      */
     @Override
     public <T> T getBean(Class<T> type) {
+        // 第一轮：收集所有类型匹配的 Bean 名称
+        List<String> matchedNames = new ArrayList<>();
         for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             if (type.isAssignableFrom(entry.getValue().getBeanClass())) {
-                return (T) doGetBean(entry.getKey(), type);
+                matchedNames.add(entry.getKey());
             }
         }
-        throw new RuntimeException("No bean of type " + type.getName() + " found");
+
+        if (matchedNames.isEmpty()) {
+            throw new RuntimeException("No bean of type " + type.getName() + " found");
+        }
+
+        // 精确匹配优先：找到类型完全一致的 Bean
+        List<String> exactMatches = matchedNames.stream()
+                .filter(name -> beanDefinitionMap.get(name).getBeanClass().equals(type))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (exactMatches.size() == 1) {
+            return (T) doGetBean(exactMatches.get(0), type);
+        }
+        if (exactMatches.size() > 1) {
+            // 多个精确匹配：无法自动决定，抛出异常
+            throw new RuntimeException("Expected single bean of type " + type.getName()
+                    + ", but found: " + exactMatches);
+        }
+
+        // 没有精确匹配但有多个候选：按名称回退（使用类型简单名称作为候选名称）
+        String expectedName = type.getSimpleName();
+        expectedName = Character.toLowerCase(expectedName.charAt(0)) + expectedName.substring(1);
+        if (matchedNames.contains(expectedName)) {
+            return (T) doGetBean(expectedName, type);
+        }
+
+        // 多个候选但名称也不匹配：报错
+        throw new RuntimeException("Expected single bean of type " + type.getName()
+                + ", but found: " + matchedNames + ". Use @Qualifier or field name to disambiguate.");
     }
 
     /**
@@ -351,6 +386,7 @@ public class DefaultListableBeanFactory implements BeanFactory {
             for (int i = 0; i < parameterTypes.length; i++) {
                 args[i] = getBean(parameterTypes[i]);
             }
+            // newInstance()：反射创建对象
             return constructor.newInstance(args);
         }
 
@@ -360,27 +396,89 @@ public class DefaultListableBeanFactory implements BeanFactory {
 
     /**
      * Bean属性填充（依赖注入）
-     * 处理@Autowired注解的字段
+     * 处理@Autowired注解的字段和Setter方法
      */
     private void populateBean(BeanDefinition beanDefinition, Object bean) throws Exception {
+        // 1. 字段注入
         for (Field field : beanDefinition.getAutowiredFields()) {
-            Autowired autowired = field.getAnnotation(Autowired.class);
             Class<?> fieldType = field.getType();
+            Autowired autowired = field.getAnnotation(Autowired.class);
+            Object dependency = resolveDependency(fieldType, field.getName(), autowired.required());
 
-            Object dependency;
-            // 根据类型自动注入
-            if (field.isAnnotationPresent(Autowired.class)) {
-                dependency = getBean(fieldType);
-            } else {
-                // 根据名称注入
-                dependency = getBean(field.getName(), fieldType);
+            if (dependency != null) {
+                field.setAccessible(true);
+                field.set(bean, dependency);
+                logger.debug("Autowired field: {} in bean: {}", field.getName(), beanDefinition.getBeanName());
             }
-
-            // 反射赋值
-            field.setAccessible(true);
-            field.set(bean, dependency);
-            logger.debug("Autowired field: {} in bean: {}", field.getName(), beanDefinition.getBeanName());
         }
+
+        // 2. Setter 方法注入
+        for (Method method : beanDefinition.getAutowiredMethods()) {
+            Class<?> paramType = method.getParameterTypes()[0];
+            Autowired autowired = method.getAnnotation(Autowired.class);
+            String paramName = method.getName().replaceFirst("^(set|is)", "");
+            paramName = Character.toLowerCase(paramName.charAt(0)) + paramName.substring(1);
+            Object dependency = resolveDependency(paramType, paramName, autowired.required());
+
+            if (dependency != null) {
+                method.setAccessible(true);
+                method.invoke(bean, dependency);
+                logger.debug("Autowired setter: {} in bean: {}", method.getName(), beanDefinition.getBeanName());
+            }
+        }
+    }
+
+    /**
+     * 解析单个依赖项
+     * 策略：先按类型查找 → 找到多个则按名称回退
+     */
+    private Object resolveDependency(Class<?> type, String name, boolean required) {
+        List<String> candidates = new ArrayList<>();
+        for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            if (type.isAssignableFrom(entry.getValue().getBeanClass())) {
+                candidates.add(entry.getKey());
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            if (required) {
+                throw new RuntimeException("No bean of type " + type.getName() + " found for injection");
+            }
+            return null;
+        }
+
+        // 精确匹配优先
+        List<String> exactMatches = candidates.stream()
+                .filter(n -> beanDefinitionMap.get(n).getBeanClass().equals(type))
+                .collect(java.util.stream.Collectors.toList());
+
+        if (exactMatches.size() == 1) {
+            return doGetBean(exactMatches.get(0), type);
+        }
+        if (exactMatches.size() > 1) {
+            // 多个精确匹配：尝试按名称匹配
+            if (exactMatches.contains(name)) {
+                return getBean(name, type);
+            }
+            throw new RuntimeException("Expected single bean of type " + type.getName()
+                    + ", but found: " + exactMatches + ". Use field/setter name to disambiguate.");
+        }
+
+        // 没有精确匹配但有候选：按名称回退
+        if (candidates.contains(name)) {
+            return getBean(name, type);
+        }
+
+        // 单个候选直接返回
+        if (candidates.size() == 1) {
+            return getBean(candidates.get(0), type);
+        }
+
+        if (required) {
+            throw new RuntimeException("Expected single bean of type " + type.getName()
+                    + ", but found: " + candidates + ". Use field/setter name to disambiguate.");
+        }
+        return null;
     }
 
     /**
