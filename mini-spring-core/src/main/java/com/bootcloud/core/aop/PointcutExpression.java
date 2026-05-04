@@ -14,68 +14,83 @@ public class PointcutExpression {
             return false;
         }
 
-        String[] parts = expression.split("\\.");
-        if (parts.length < 2) {
+        // 格式: "完整类名.方法模式"
+        // 方法模式可能为: methodName, methodName(), methodName(..), *(..), *
+        // 策略: 找到第一个 "(" 或最后的 "."（取较前者）来分割
+        int parenIndex = expression.indexOf('(');
+        int lastDot = expression.lastIndexOf('.');
+
+        int splitIndex;
+        if (parenIndex != -1 && parenIndex < lastDot) {
+            // "(" 出现在最后一个 "." 之前，说明 "." 是方法模式的一部分（如 ".."）
+            // 应该取 "(" 之前的最后一个 "."
+            splitIndex = expression.lastIndexOf('.', parenIndex - 1);
+        } else {
+            splitIndex = lastDot;
+        }
+
+        if (splitIndex == -1) {
             return false;
         }
 
-        String classPattern = parts[0];
-        String methodPattern = parts[1];
+        String classPattern = expression.substring(0, splitIndex);
+        String methodPattern = expression.substring(splitIndex + 1);
 
         return matchesClassPattern(classPattern, targetClass) && matchesMethodPattern(methodPattern, targetMethod);
     }
 
     private boolean matchesClassPattern(String pattern, Class<?> targetClass) {
+        String className = targetClass.getName();
+
         if ("*".equals(pattern)) {
             return true;
+        }
+
+        if (pattern.endsWith(".*")) {
+            String prefix = pattern.substring(0, pattern.length() - 1);
+            return className.startsWith(prefix);
         }
 
         if (pattern.endsWith("*")) {
             String prefix = pattern.substring(0, pattern.length() - 1);
-            return targetClass.getName().startsWith(prefix);
+            return className.startsWith(prefix);
         }
 
         if (pattern.startsWith("*")) {
             String suffix = pattern.substring(1);
-            return targetClass.getName().endsWith(suffix);
+            return className.endsWith(suffix);
         }
 
         if (pattern.contains("*")) {
-            String[] parts = pattern.split("\\*");
-            String className = targetClass.getName();
-            boolean matches = true;
-            for (int i = 0; i < parts.length; i++) {
-                if (parts[i].isEmpty()) {
-                    continue;
-                }
-                int index = className.indexOf(parts[i]);
-                if (index == -1) {
-                    matches = false;
-                    break;
-                }
-                className = className.substring(index + parts[i].length());
-            }
-            return matches;
+            String regex = java.util.regex.Pattern.quote(pattern).replace("\\*", ".*");
+            return className.matches(regex);
         }
 
-        return pattern.equals(targetClass.getName());
+        return pattern.equals(className);
     }
 
     private boolean matchesMethodPattern(String pattern, Method targetMethod) {
+        String methodName = targetMethod.getName();
+
         if ("*".equals(pattern)) {
             return true;
         }
 
+        if (pattern.equals("*(..)")) {
+            return true;
+        }
+
+        // "methodName(..)" 匹配指定名称的任意参数方法
+        if (pattern.endsWith("(..)")) {
+            String baseName = pattern.substring(0, pattern.length() - 4);
+            return baseName.equals(methodName);
+        }
+
         if (pattern.endsWith("()")) {
-            String methodName = pattern.substring(0, pattern.length() - 2);
-            return methodName.equals(targetMethod.getName());
+            String baseName = pattern.substring(0, pattern.length() - 2);
+            return baseName.equals(methodName);
         }
 
-        if (pattern.endsWith("*(..)")) {
-            String methodName = pattern.substring(0, pattern.length() - 5);
-            return methodName.equals(targetMethod.getName());
-        }
-
-        return pattern.equals(targetMethod.getName());
+        return pattern.equals(methodName);
     }
 }

@@ -1,5 +1,6 @@
-package com.bootcloud.core.test;
+package com.bootcloud.core.test.support;
 
+import com.bootcloud.core.annotation.Component;
 import com.bootcloud.core.aop.After;
 import com.bootcloud.core.aop.Aspect;
 import com.bootcloud.core.aop.Around;
@@ -9,20 +10,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Aspect
+@Component
 public class LogAspect {
     private static final Logger logger = LoggerFactory.getLogger(LogAspect.class);
 
-    @Before("com.bootcloud.core.test.UserService.*(..)")
+    @Before("com.bootcloud.core.test.support.UserService.*(..)")
     public void before(ProceedingJoinPoint joinPoint) {
         logger.info("Before advice: {}", joinPoint.getSignature());
     }
 
-    @After("com.bootcloud.core.test.UserService.*(..)")
+    @After("com.bootcloud.core.test.support.UserService.*(..)")
     public void after(ProceedingJoinPoint joinPoint) {
         logger.info("After advice: {}", joinPoint.getSignature());
     }
 
-    @Around("com.bootcloud.core.test.OrderService.*(..)")
+    @Around("com.bootcloud.core.test.support.OrderService.*(..)")
     public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         logger.info("Around before: {}", joinPoint.getSignature());

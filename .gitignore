@@ -13,6 +13,7 @@ out/
 .project
 .settings/
 .vscode/
+.claude/
 
 # 构建工具
 ### Maven

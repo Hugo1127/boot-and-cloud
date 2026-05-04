@@ -22,20 +22,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Bean 作用域和并发安全测试
- * 
+ *
  * 【测试目标】
- * 1. 验证单例 Bean 在并发环境下的线程安全性
- * 2. 验证原型 Bean 每次都创建新实例
- * 3. 验证双重检查锁定（DCL）的正确性
- * 
- * 【面试考点】
- * 1. 为什么 ConcurrentHashMap 不能保证并发安全？
- *    - 只能保证单个 put/get 操作原子，不能保证"查询 + 创建"复合操作原子
- * 2. 为什么需要 ReentrantLock？
- *    - 确保"查询 + 创建"的原子性，防止多线程重复创建
- * 3. 双重检查锁定的作用？
- *    - 第一次检查（无锁）：避免不必要的锁竞争，提升性能
- *    - 第二次检查（有锁）：防止多线程同时通过第一次检查后重复创建
+ * 1. 单例 Bean 全局唯一
+ * 2. 原型 Bean 每次获取都是新实例
+ * 3. 50 线程并发获取单例 → 全部是同一个实例
+ * 4. 50 线程并发获取原型 → 全部是不同实例
+ * 5. 双重检查锁定正确性
  */
 public class ScopeAndConcurrencyTest {
     private static final Logger logger = LoggerFactory.getLogger(ScopeAndConcurrencyTest.class);
@@ -90,11 +83,11 @@ public class ScopeAndConcurrencyTest {
         SingletonBean bean2 = context.getBean(SingletonBean.class);
         SingletonBean bean3 = context.getBean("singletonBean", SingletonBean.class);
 
-        assertSame(bean1, bean2, "单例 Bean 应该是同一个对象");
-        assertSame(bean2, bean3, "单例 Bean 应该是同一个对象");
-        assertEquals(bean1.getId(), bean2.getId(), "单例 Bean 的 ID 应该相同");
+        assertSame(bean1, bean2, "Singleton beans should be the same instance");
+        assertSame(bean2, bean3, "Singleton beans should be the same instance");
+        assertEquals(bean1.getId(), bean2.getId());
 
-        logger.info("Singleton scope test passed - all beans are the same instance");
+        logger.info("Singleton scope test passed");
         context.close();
     }
 
@@ -108,11 +101,11 @@ public class ScopeAndConcurrencyTest {
         PrototypeBean bean2 = context.getBean(PrototypeBean.class);
         PrototypeBean bean3 = context.getBean("prototypeBean", PrototypeBean.class);
 
-        assertNotSame(bean1, bean2, "原型 Bean 应该是不同的对象");
-        assertNotSame(bean2, bean3, "原型 Bean 应该是不同的对象");
-        assertNotEquals(bean1.getId(), bean2.getId(), "原型 Bean 的 ID 应该不同");
+        assertNotSame(bean1, bean2, "Prototype beans should be different instances");
+        assertNotSame(bean2, bean3, "Prototype beans should be different instances");
+        assertNotEquals(bean1.getId(), bean2.getId());
 
-        logger.info("Prototype scope test passed - all beans are different instances");
+        logger.info("Prototype scope test passed");
         context.close();
     }
 
@@ -130,11 +123,8 @@ public class ScopeAndConcurrencyTest {
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
-                    SingletonBean bean = context.getBean(SingletonBean.class);
-                    beans.add(bean);
-                    latch.countDown();
-                } catch (Exception e) {
-                    logger.error("Failed to get bean", e);
+                    beans.add(context.getBean(SingletonBean.class));
+                } finally {
                     latch.countDown();
                 }
             });
@@ -144,12 +134,10 @@ public class ScopeAndConcurrencyTest {
         executor.shutdown();
         executor.awaitTermination(5, TimeUnit.SECONDS);
 
-        assertEquals(threadCount, beans.size(), "所有线程都应该成功获取 Bean");
+        assertEquals(threadCount, beans.size(), "All threads should get a bean");
+        assertEquals(1, new HashSet<>(beans).size(), "All threads should get the same singleton");
 
-        Set<SingletonBean> uniqueBeans = new HashSet<>(beans);
-        assertEquals(1, uniqueBeans.size(), "所有线程获取的应该是同一个单例 Bean");
-
-        logger.info("Concurrency test passed - {} threads got the same singleton instance", threadCount);
+        logger.info("Singleton concurrency test passed - {} threads, 1 instance", threadCount);
         context.close();
     }
 
@@ -167,11 +155,8 @@ public class ScopeAndConcurrencyTest {
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
-                    PrototypeBean bean = context.getBean(PrototypeBean.class);
-                    beans.add(bean);
-                    latch.countDown();
-                } catch (Exception e) {
-                    logger.error("Failed to get bean", e);
+                    beans.add(context.getBean(PrototypeBean.class));
+                } finally {
                     latch.countDown();
                 }
             });
@@ -181,17 +166,15 @@ public class ScopeAndConcurrencyTest {
         executor.shutdown();
         executor.awaitTermination(5, TimeUnit.SECONDS);
 
-        assertEquals(threadCount, beans.size(), "所有线程都应该成功获取 Bean");
-
+        assertEquals(threadCount, beans.size());
         Set<String> uniqueIds = new HashSet<>();
         for (PrototypeBean bean : beans) {
             uniqueIds.add(bean.getId());
         }
+        assertEquals(threadCount, uniqueIds.size(), "Each thread should get a different prototype instance");
 
-        assertEquals(threadCount, uniqueIds.size(), "每个线程获取的应该是不同的原型 Bean");
-
-        logger.info("Prototype concurrency test passed - {} threads got {} different instances", 
-                    threadCount, uniqueIds.size());
+        logger.info("Prototype concurrency test passed - {} threads, {} unique instances",
+                threadCount, uniqueIds.size());
         context.close();
     }
 
@@ -204,18 +187,13 @@ public class ScopeAndConcurrencyTest {
         int threadCount = 100;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
-        AtomicInteger creationCount = new AtomicInteger(0);
         List<SingletonBean> beans = Collections.synchronizedList(new ArrayList<>());
 
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
-                    SingletonBean bean = context.getBean(SingletonBean.class);
-                    beans.add(bean);
-                    creationCount.incrementAndGet();
-                    latch.countDown();
-                } catch (Exception e) {
-                    logger.error("Failed to get bean", e);
+                    beans.add(context.getBean(SingletonBean.class));
+                } finally {
                     latch.countDown();
                 }
             });
@@ -225,12 +203,10 @@ public class ScopeAndConcurrencyTest {
         executor.shutdown();
         executor.awaitTermination(5, TimeUnit.SECONDS);
 
-        assertEquals(threadCount, beans.size(), "所有线程都应该成功获取 Bean");
+        assertEquals(threadCount, beans.size());
+        assertEquals(1, new HashSet<>(beans).size(), "DCL should result in exactly one instance");
 
-        Set<SingletonBean> uniqueBeans = new HashSet<>(beans);
-        assertEquals(1, uniqueBeans.size(), "双重检查锁定应该确保只有一个 Bean 实例");
-
-        logger.info("DCL test passed - {} threads, but only 1 instance created", threadCount);
+        logger.info("DCL test passed - {} threads, 1 instance", threadCount);
         context.close();
     }
 
@@ -240,8 +216,8 @@ public class ScopeAndConcurrencyTest {
         context.scan("com.bootcloud.core.test");
         context.refresh();
 
-        assertTrue(context.isSingleton("singletonBean"), "SingletonBean 应该是单例");
-        assertFalse(context.isSingleton("prototypeBean"), "PrototypeBean 不应该是单例");
+        assertTrue(context.isSingleton("singletonBean"));
+        assertFalse(context.isSingleton("prototypeBean"));
 
         assertEquals("singleton", context.getBeanDefinition("singletonBean").getScope());
         assertEquals("prototype", context.getBeanDefinition("prototypeBean").getScope());

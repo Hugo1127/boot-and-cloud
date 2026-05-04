@@ -1,4 +1,4 @@
-package com.bootcloud.core.test;
+package com.bootcloud.core.test.support;
 
 import com.bootcloud.core.annotation.Autowired;
 import com.bootcloud.core.annotation.PostConstruct;
