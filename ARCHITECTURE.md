@@ -92,7 +92,7 @@ graph TD
     feign --> lb
     feign --> cb
     lb --> registry
-    cb --> feign
+    cb --> boot
     gw --> boot
     gw --> registry
     
@@ -527,6 +527,6 @@ Boot\&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Sprin
 
 ***
 
-**文档版本**：v1.0\
-**最后更新**：2026-04-12\
+**文档版本**：v1.1\
+**最后更新**：2026-05-05\
 **作者**：Boot\&Cloud 开发团队
