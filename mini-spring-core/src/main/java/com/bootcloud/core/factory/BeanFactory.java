@@ -18,4 +18,6 @@ public interface BeanFactory {
     BeanDefinition getBeanDefinition(String name);
 
     Map<String, BeanDefinition> getBeanDefinitionMap();
+
+    <T> Map<String, T> getBeansOfType(Class<T> type);
 }

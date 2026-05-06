@@ -4,6 +4,8 @@ import com.bootcloud.core.factory.BeanFactory;
 import com.bootcloud.core.event.ApplicationEvent;
 import com.bootcloud.core.event.ApplicationListener;
 
+import java.util.Map;
+
 public interface ApplicationContext extends BeanFactory {
     void refresh();
 
@@ -16,4 +18,6 @@ public interface ApplicationContext extends BeanFactory {
     void addApplicationListener(ApplicationListener<?> listener);
 
     void registerShutdownHook();
+
+    <T> Map<String, T> getBeansOfType(Class<T> type);
 }

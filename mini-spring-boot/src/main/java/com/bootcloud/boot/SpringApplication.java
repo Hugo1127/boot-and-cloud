@@ -1,6 +1,7 @@
 package com.bootcloud.boot;
 
 import com.bootcloud.boot.context.BootApplicationContext;
+import com.bootcloud.boot.web.server.WebServerLifecycle;
 import com.bootcloud.core.context.ApplicationContext;
 import com.bootcloud.core.context.support.GenericApplicationContext;
 import org.slf4j.Logger;
@@ -39,8 +40,10 @@ public class SpringApplication {
             context.loadAutoConfiguration();
             
             context.refresh();
-            
+
             applicationContext = context;
+
+            startWebServers(context);
 
             logger.info("Boot&Cloud application started successfully");
             logger.info("Application context ID: {}", context.getId());
@@ -55,6 +58,15 @@ public class SpringApplication {
 
     private String getBasePackage() {
         return primarySource.getPackage().getName();
+    }
+
+    private void startWebServers(BootApplicationContext context) {
+        try {
+            WebServerLifecycle lifecycle = new WebServerLifecycle(context);
+            lifecycle.start();
+        } catch (Exception e) {
+            logger.warn("Failed to start web servers: {}", e.getMessage());
+        }
     }
 
     public BootApplicationContext getContext() {

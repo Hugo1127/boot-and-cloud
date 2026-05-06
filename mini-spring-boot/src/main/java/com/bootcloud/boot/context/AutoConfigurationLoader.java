@@ -76,17 +76,14 @@ public class AutoConfigurationLoader {
     }
 
     private void loadConfiguration(Class<?> clazz, BootApplicationContext context) throws Exception {
+        Object configInstance = clazz.getDeclaredConstructor().newInstance();
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
-            if (method.getParameterCount() == 0 && 
-                method.isAnnotationPresent(ConditionalOnClass.class) || 
-                method.isAnnotationPresent(ConditionalOnProperty.class)) {
-                
+            if (method.getParameterCount() == 0 || canResolveParameters(method, context)) {
                 if (shouldLoadMethod(method, context)) {
-                    Object configInstance = clazz.getDeclaredConstructor().newInstance();
-                    Object bean = method.invoke(configInstance);
+                    Object bean = invokeMethod(method, configInstance, context);
                     String beanName = method.getName();
-                    
+
                     if (context.containsBean(beanName)) {
                         logger.debug("Bean already exists: {}", beanName);
                         continue;
@@ -100,6 +97,34 @@ public class AutoConfigurationLoader {
                 }
             }
         }
+    }
+
+    private boolean canResolveParameters(Method method, BootApplicationContext context) {
+        Class<?>[] paramTypes = method.getParameterTypes();
+        for (Class<?> paramType : paramTypes) {
+            if (!BootApplicationContext.class.isAssignableFrom(paramType)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Object invokeMethod(Method method, Object target, BootApplicationContext context) throws Exception {
+        method.setAccessible(true);
+        if (method.getParameterCount() == 0) {
+            return method.invoke(target);
+        }
+        Object[] args = new Object[method.getParameterCount()];
+        for (int i = 0; i < args.length; i++) {
+            Class<?> paramType = method.getParameterTypes()[i];
+            if (BootApplicationContext.class.isAssignableFrom(paramType)) {
+                args[i] = context;
+            } else {
+                throw new IllegalStateException("Cannot resolve parameter of type " + paramType.getName()
+                        + " for method " + method.getName());
+            }
+        }
+        return method.invoke(target, args);
     }
 
     private boolean shouldLoadMethod(Method method, BootApplicationContext context) {

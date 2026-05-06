@@ -134,4 +134,9 @@ public class GenericApplicationContext implements ApplicationContext {
     public long getStartupDate() {
         return startupDate;
     }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(Class<T> type) {
+        return beanFactory.getBeansOfType(type);
+    }
 }

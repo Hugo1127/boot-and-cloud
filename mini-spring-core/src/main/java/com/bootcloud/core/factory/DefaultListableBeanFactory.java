@@ -494,6 +494,28 @@ public class DefaultListableBeanFactory implements BeanFactory {
     }
 
     /**
+     * 获取所有指定类型的 Bean 实例
+     * 返回 beanName -> beanInstance 的映射
+     */
+    @Override
+    public <T> Map<String, T> getBeansOfType(Class<T> type) {
+        Map<String, T> result = new ConcurrentHashMap<>();
+        for (Map.Entry<String, BeanDefinition> entry : beanDefinitionMap.entrySet()) {
+            String beanName = entry.getKey();
+            BeanDefinition bd = entry.getValue();
+            if (type.isAssignableFrom(bd.getBeanClass())) {
+                try {
+                    T bean = getBean(beanName, type);
+                    result.put(beanName, bean);
+                } catch (Exception e) {
+                    logger.warn("Failed to get bean of type {} with name {}: {}", type.getName(), beanName, e.getMessage());
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
      预先实例化所有单例Bean
      项目启动时执行，初始化所有单例Bean
      */
