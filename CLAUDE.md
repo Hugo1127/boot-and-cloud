@@ -47,6 +47,7 @@ boot-cloud-parent (聚合父)
 ├── mini-spring-cloud-loadbalancer # 客户端负载均衡
 ├── mini-spring-cloud-circuitbreaker # 熔断器
 ├── mini-spring-gateway       # API 网关
+├── mini-spring-cloud-mq      # 轻量级消息队列
 ├── jvm-optimizer             # JVM 监控与调优
 ├── concurrent-optimizer      # 线程池 + 锁 + AQS/CAS
 └── demo-app                  # 示例应用（user/order/goods）
@@ -57,6 +58,7 @@ boot-cloud-parent (聚合父)
 ```
 demo-app → 所有其他模块
 mini-spring-boot → mini-spring-core
+mini-spring-cloud-mq → mini-spring-boot, concurrent-optimizer
 mini-spring-gateway → mini-spring-boot, mini-spring-cloud-registry
 mini-spring-cloud-feign → mini-spring-cloud-registry, mini-spring-cloud-loadbalancer
 mini-spring-cloud-loadbalancer → mini-spring-cloud-registry

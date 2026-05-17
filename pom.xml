@@ -35,6 +35,7 @@
         <module>mini-spring-cloud-loadbalancer</module>
         <module>mini-spring-cloud-circuitbreaker</module>
         <module>mini-spring-gateway</module>
+        <module>mini-spring-cloud-mq</module>
         <module>jvm-optimizer</module>
         <module>concurrent-optimizer</module>
         <module>demo-app</module>
