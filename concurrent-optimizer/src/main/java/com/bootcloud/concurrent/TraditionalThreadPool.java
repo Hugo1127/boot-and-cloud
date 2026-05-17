@@ -56,17 +56,17 @@ public class TraditionalThreadPool extends ThreadPoolExecutor {
             corePoolSize,
             maxPoolSize,
             60L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(100),
+            new MyBlockingQueue<>(100),
             poolName
         );
     }
 
     /**
      * 创建【IO密集型】线程池
-     * 
+     *
      * 适用于：接口调用、数据库操作、文件读写等IO等待任务
      * 配置规则：核心线程数=CPU核心数*2，最大线程数=CPU核心数*4，队列容量1000
-     * 
+     *
      * @param poolName 线程池名称
      * @return TraditionalThreadPool实例
      */
@@ -77,7 +77,7 @@ public class TraditionalThreadPool extends ThreadPoolExecutor {
             corePoolSize,
             maxPoolSize,
             60L, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(1000),
+            new MyBlockingQueue<>(1000),
             poolName
         );
     }
