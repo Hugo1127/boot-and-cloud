@@ -109,13 +109,6 @@ Circular dependency test passed
 Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-**面试要点**：
-
-- Bean是如何扫描和注册的？
-- 依赖注入是如何实现的？
-- @PostConstruct和@PreDestroy何时执行？
-- 循环依赖如何通过三级缓存解决？
-
 ### 2. AOP代理示例
 
 **目标**：演示动态代理、切面、通知
@@ -136,13 +129,6 @@ After advice: com.bootcloud.core.test.UserService.getUser
 Multiple advices test passed
 Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
 ```
-
-**面试要点**：
-
-- JDK代理和CGLIB代理的区别？
-- AOP底层原理是什么？
-- 通知的执行顺序？
-- 切点表达式如何匹配？
 
 ### 3. JVM监控示例
 
@@ -186,13 +172,6 @@ GC Collection Time: 0ms
 Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-**面试要点**：
-
-- JVM内存模型是怎样的？
-- G1GC的调优参数有哪些？
-- 如何排查OOM问题？
-- JVM运行时信息包含哪些内容？
-
 ### 4. 并发优化示例
 
 **目标**：演示虚拟线程池、传统线程池、锁性能对比、死锁检测
@@ -232,13 +211,6 @@ mvn test -Dtest=ThreadPoolTest
 传统线程执行 100 个CPU密集型任务耗时: 52ms
 性能提升: -298.08%
 ```
-
-**面试要点**：
-
-- 虚拟线程的轻量级实现原理？
-- 虚拟线程何时会挂起/恢复？
-- 虚拟线程适用于哪些场景？
-- 为什么CPU密集型场景虚拟线程反而更慢？
 
 #### 4.2 锁性能对比示例
 
@@ -286,13 +258,6 @@ AtomicInteger (CAS):
 
 Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
 ```
-
-**面试要点**：
-
-- synchronized 锁的升级过程？
-- CAS 的原理和缺点？
-- 如何避免死锁？
-- AQS 的核心原理是什么？
 
 #### 4.3 死锁检测示例
 
@@ -350,13 +315,6 @@ Instance: localhost:8080 (healthy: true)
 Tests run: 11, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-**面试要点**：
-
-- 服务注册中心的作用是什么？
-- 心跳检测机制如何实现？
-- 服务下线如何处理？
-- CAP定理在注册中心中的应用？
-
 ### 6. 负载均衡示例
 
 **目标**：演示轮询、随机、加权轮询、最少活跃等负载策略
@@ -383,13 +341,6 @@ Chosen instance by Random: index=2, instance=instance-3
 Tests run: 7, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-**面试要点**：
-
-- 负载均衡的常见算法有哪些？
-- 加权轮询如何实现？
-- 最少活跃策略的适用场景？
-- 一致性哈希在负载均衡中的应用？
-
 ### 7. 熔断器示例
 
 **目标**：演示熔断、降级、限流机制
@@ -411,13 +362,6 @@ Circuit breaker transitioning to CLOSED for: test-circuit-breaker
 Circuit Breaker [test-circuit-breaker] - State: CLOSED, Failures: 0, Successes: 1
 Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
 ```
-
-**面试要点**：
-
-- 熔断器的三种状态是什么？
-- 状态转换的条件是什么？
-- 降级和熔断的区别？
-- 如何设计熔断恢复策略？
 
 ### 8. API网关示例
 
@@ -442,13 +386,6 @@ Request completed: GET /api/user/1 - Status: 200 - Duration: 0ms
 Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 ```
 
-**面试要点**：
-
-- API网关的作用是什么？
-- 过滤器链的执行顺序？
-- 如何实现限流和鉴权？
-- 网关的性能优化方案？
-
 ## 核心功能
 
 ### 1. IOC容器（mini-spring-core）
@@ -459,13 +396,6 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 - 循环依赖解决：三级缓存机制
 - Bean作用域：Singleton、Prototype
 
-**面试考点**：
-
-- Bean生命周期流程
-- 循环依赖解决方案
-- 依赖注入的原理
-- Bean作用域的区别
-
 ### 2. AOP实现（mini-spring-core）
 
 - 动态代理：JDK动态代理 + CGLIB代理
@@ -473,24 +403,11 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 - 切点表达式：支持类和方法匹配
 - 代理工厂：自动选择代理方式
 
-**面试考点**：
-
-- JDK代理 vs CGLIB代理
-- AOP底层原理
-- 通知执行顺序
-- 切点表达式语法
-
 ### 3. 自动配置（mini-spring-boot）
 
 - 条件注解：`@ConditionalOnClass`, `@ConditionalOnProperty`
 - 自动配置加载：`spring.factories`机制
 - 启动注解：`@SpringBootApplication`, `@EnableAutoConfiguration`
-
-**面试考点**：
-
-- Spring Boot自动配置原理
-- Starter开发流程
-- 条件化配置机制
 
 ### 4. 嵌入式容器（mini-spring-boot）
 
@@ -499,25 +416,12 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 - 控制器：`@RestController`
 - 参数绑定：`@RequestBody`, `@PathVariable`
 
-**面试考点**：
-
-- 嵌入式容器原理
-- HTTP请求处理流程
-- Netty vs Tomcat
-
 ### 5. 服务注册与发现（mini-spring-cloud-registry）
 
 - 服务注册：内存存储服务实例
 - 服务发现：根据服务ID获取实例列表
 - 心跳检测：定期检测服务健康状态
 - 服务下线：优雅下线机制
-
-**面试考点**：
-
-- 注册中心的作用
-- 心跳检测机制
-- CAP定理
-- 服务健康检查
 
 ### 6. 负载均衡（mini-spring-cloud-loadbalancer）
 
@@ -526,26 +430,12 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 - 加权轮询：WeightedRoundRobinLoadBalancer
 - 最少活跃：LeastActiveLoadBalancer
 
-**面试考点**：
-
-- 负载均衡算法
-- 加权轮询实现
-- 一致性哈希
-- 客户端负载均衡
-
 ### 7. 服务容错（mini-spring-cloud-circuitbreaker）
 
 - 熔断器：三种状态（CLOSED、OPEN、HALF\_OPEN）
 - 降级处理：fallback方法调用
 - 限流控制：请求频率限制
 - 状态转换：自动恢复机制
-
-**面试考点**：
-
-- 熔断器状态转换
-- 降级与熔断区别
-- 限流算法
-- 服务雪崩预防
 
 ### 8. API网关（mini-spring-gateway）
 
@@ -554,26 +444,12 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 - 动态路由：运行时添加/删除路由
 - 路由控制：启用/禁用路由
 
-**面试考点**：
-
-- 网关架构设计
-- 过滤器链执行
-- 限流实现方案
-- 网关性能优化
-
 ### 9. JVM调优（jvm-optimizer）
 
 - JVM信息获取：内存、线程、类、GC、运行时信息
 - 内存泄漏模拟：OOM场景模拟
 - GC调优：G1GC/ZGC调优建议
 - 性能分析：GC统计、推荐参数
-
-**面试考点**：
-
-- JVM内存模型
-- GC算法原理
-- OOM排查方法
-- JVM调优参数
 
 ### 10. 并发优化（concurrent-optimizer）
 
@@ -606,23 +482,27 @@ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
 | ReadWriteLock | 1ms |
 | AtomicInteger | 0ms |
 
-**面试考点**：
+## 文档导航
 
-- 虚拟线程 vs 传统线程（轻量级、挂起机制、适用场景）
-- 线程池原理（核心线程、队列、拒绝策略）
-- synchronized 锁的升级过程（偏向锁→轻量级锁→重量级锁）
-- CAS 原理和 ABA 问题解决方案
-- AQS 核心原理（CLH 队列、CAS、模板方法模式）
-- 死锁避免策略（顺序锁、资源分配图）
+项目文档统一存放在 `docs/` 目录，各文档职责如下：
+
+| 文档 | 说明 |
+|------|------|
+| [architecture.md](docs/architecture.md) | 架构设计：分层架构、模块依赖、核心流程、设计模式 |
+| [interview-questions.md](docs/interview-questions.md) | 面试题总结：29 道高频考题 + 标准应答 + 原理延伸 |
+| [agents.md](docs/agents.md) | AI Agent 开发约束与交付规范 |
+| [mq-design.md](docs/mq-design.md) | 消息队列设计：Exchange/Queue/Broker/ACK/DLQ |
+| [bean-scope-implementation.md](docs/bean-scope-implementation.md) | Bean 作用域与并发安全实现细节 |
+| [feign-usage-example.md](docs/feign-usage-example.md) | Feign + 服务注册中心集成使用示例 |
+| [virtual-thread-usage.md](docs/virtual-thread-usage.md) | 虚拟线程使用指南与性能测试数据 |
 
 ## 项目特色
 
 1. **从零实现**：不依赖 Spring 框架，手写所有核心逻辑
-2. **面试导向**：每个模块都标注面试考点
-3. **代码可读**：核心代码添加详细注释
-4. **测试覆盖**：单元测试覆盖率≥80%
-5. **性能优化**：提供 JVM 和并发调优方案
-6. **数据支撑**：提供详实的压测数据（均为实际运行输出）
+2. **原理吃透**：代码、文档、面试题三位一体，详见 [docs/interview-questions.md](docs/interview-questions.md)
+3. **测试覆盖**：单元测试覆盖率 ≥ 80%
+4. **性能优化**：提供 JVM 和并发调优方案，附实测数据
+5. **架构清晰**：分层模块化设计，详见 [docs/architecture.md](docs/architecture.md)
 
 ## 贡献指南
 
