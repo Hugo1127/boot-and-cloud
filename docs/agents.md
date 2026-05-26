@@ -16,7 +16,7 @@
 
 项目名称：Boot\&Cloud（手写极简微服务框架）
 
-技术栈规范：纯Java开发（JDK 17+），严格禁止依赖Spring全家桶、第三方IOC/AOP框架（如Guice）、成熟服务治理组件（如Eureka、Nacos、Hystrix）；仅允许使用JDK原生API + 少量基础工具库（Netty用于网络通信、Jackson用于序列化、JUnit 5用于单元测试、SLF4J+Logback用于日志），核心逻辑必须从零自研。
+技术栈规范：纯Java开发（JDK 25+），严格禁止依赖Spring全家桶、第三方IOC/AOP框架（如Guice）、成熟服务治理组件（如Eureka、Nacos、Hystrix）；仅允许使用JDK原生API + 少量基础工具库（Netty用于网络通信、Jackson用于序列化、JUnit 5用于单元测试、SLF4J+Logback用于日志、CGLIB+ASM用于字节码增强），核心逻辑必须从零自研。
 
 架构分层（清晰可落地，对应Spring生态）：核心容器层 → 微服务组件层 → 性能优化层 → 示例应用层，每层独立模块化，可单独编译、测试、扩展。
 
@@ -167,6 +167,8 @@
 \- mini-spring-cloud-circuitbreaker：服务熔断与降级
 
 \- mini-spring-gateway：API网关
+
+\- mini-spring-cloud-mq：轻量级消息队列
 
 \- jvm-optimizer：JVM调优模块
 

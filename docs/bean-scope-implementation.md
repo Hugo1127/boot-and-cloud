@@ -314,8 +314,6 @@ public void testDoubleCheckedLocking() throws InterruptedException {
    - 解析@Scope 注解
 3. `mini-spring-core/src/main/java/com/bootcloud/core/bean/BeanDefinition.java`
    - 已有 scope 属性，无需修改
-4. `TODO.md`
-   - 更新已完成工作
 
 ## 七、编译和测试
 

@@ -17,10 +17,12 @@ Boot&Cloud/
 ├── mini-spring-cloud-loadbalancer/ # 负载均衡：轮询/随机/加权轮询/最少活跃策略
 ├── mini-spring-cloud-circuitbreaker/ # 服务容错：熔断、降级、限流
 ├── mini-spring-gateway/       # API 网关：请求路由、过滤、转发
+├── mini-spring-cloud-mq/     # 消息队列：Exchange、Queue、ACK、死信队列
 ├── jvm-optimizer/            # JVM 调优：内存模型、GC 调优、堆外内存、监控工具
 ├── concurrent-optimizer/      # 并发优化：线程池、锁优化、ThreadLocal、并发容器
 ├── demo-app/                 # 实战演示：微服务调用、容错、网关完整示例
-├── ARCHITECTURE.md           # 完整架构设计文档
+├── docs/                     # 项目文档（架构、面试题、设计文档等）
+├── CLAUDE.md                 # 项目开发规范
 └── pom.xml                   # Maven 统一依赖管理
 ```
 

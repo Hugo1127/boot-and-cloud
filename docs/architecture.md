@@ -28,6 +28,9 @@ Boot\&Cloud 采用四层架构设计，自底向上分别为：
 │  ┌──────────────────────────────────────────────────┐  │
 │  │              API Gateway                          │  │
 │  └──────────────────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │              Message Queue (MQ)                   │  │
+│  └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -67,6 +70,7 @@ graph TD
         lb[mini-spring-cloud-loadbalancer]
         cb[mini-spring-cloud-circuitbreaker]
         gw[mini-spring-gateway]
+        mq[mini-spring-cloud-mq]
     end
     
     subgraph 核心容器层
@@ -86,6 +90,7 @@ graph TD
     demo --> cb
     demo --> jvm
     demo --> concurrent
+    demo --> mq
     
     registry --> boot
     feign --> boot
@@ -95,6 +100,8 @@ graph TD
     cb --> boot
     gw --> boot
     gw --> registry
+    mq --> boot
+    mq --> concurrent
     
     boot --> core
     
@@ -113,6 +120,7 @@ graph TD
 | **mini-spring-cloud-loadbalancer**   | 客户端负载均衡         | LoadBalancer, LoadBalancerFactory             | 负载均衡算法              |
 | **mini-spring-cloud-circuitbreaker** | 服务熔断降级          | CircuitBreaker, CircuitBreakerFactory         | 熔断器状态机、降级策略         |
 | **mini-spring-gateway**              | API 网关          | Gateway, GatewayFilter                        | 网关设计、路由转发           |
+| **mini-spring-cloud-mq**             | 轻量级消息队列        | MessageBroker, Exchange, Queue                | 消息路由、ACK、幂等性        |
 | **jvm-optimizer**                    | JVM 调优监控        | JVMProfiler, GCTuner                          | JVM 内存模型、GC 算法      |
 | **concurrent-optimizer**             | 多线程锁优化          | SmartThreadPool, LockComparator               | 线程池、锁升级、CAS         |
 | **demo-app**                         | 示例微服务应用         | UserController, OrderService                  | 端到端流程演示             |
@@ -514,7 +522,7 @@ public enum CircuitBreakerState {
 
 ***
 
-## 八、总结
+## 七、总结
 
 Boot\&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Spring Cloud 的核心功能。通过本项目，可以深入理解：
 
@@ -527,6 +535,6 @@ Boot\&Cloud 框架采用分层架构设计，从零实现了 Spring Boot + Sprin
 
 ***
 
-**文档版本**：v1.1\
-**最后更新**：2026-05-05\
+**文档版本**：v1.2
+**最后更新**：2026-05-26
 **作者**：Boot\&Cloud 开发团队

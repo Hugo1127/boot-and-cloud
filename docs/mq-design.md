@@ -242,4 +242,4 @@ mini-spring-cloud-mq → mini-spring-boot, mini-spring-core, concurrent-optimize
 ### Phase 6：测试与文档（P1）
 - 单元测试覆盖 ≥ 80%
 - 集成测试
-- INTERVIEW_QUESTIONS.md 补充 MQ 考点
+- docs/interview-questions.md 补充 MQ 考点
